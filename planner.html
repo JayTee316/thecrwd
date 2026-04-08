@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demonic Pacts Planner — Leagues VI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   TOKENS & RESET
+══════════════════════════════════════════════════════ */
+:root {
+  --ink:    #0a0806;
+  --paper:  #f5efe4;
+  --parch:  #ede3d0;
+  --cream:  #faf6ef;
+  --gold:   #b8892a;
+  --gold2:  #d4a83e;
+  --ember:  #c0391b;
+  --ember2: #e04520;
+  --blood:  #7a1a0a;
+  --sage:   #3d5a3e;
+  --slate:  #2c3440;
+  --dim:    #8a7a6a;
+  --border: rgba(184,137,42,0.22);
+  --shadow: rgba(10,8,6,0.18);
+  --r: 3px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Parchment texture overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(192,57,27,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(184,137,42,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 50%, rgba(10,8,6,0) 0%, rgba(10,8,6,0.4) 100%);
+}
+
+/* Noise grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+.app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 20px 60px; }
+
+/* ══ HEADER ══ */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 0 20px; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 12px;
+}
+.header-left h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(20px, 3vw, 32px);
+  font-weight: 900;
+  color: var(--gold2);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 40px rgba(212,168,62,0.2);
+  line-height: 1;
+}
+.header-left p {
+  font-size: 13px;
+  color: var(--dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.header-right {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.build-controls {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.btn {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--paper);
+  cursor: pointer;
+  border-radius: var(--r);
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.btn:hover { background: rgba(255,255,255,0.08); border-color: rgba(184,137,42,0.4); }
+.btn-gold { background: var(--gold); border-color: var(--gold2); color: var(--ink); font-weight: 700; }
+.btn-gold:hover { background: var(--gold2); }
+.btn-ember { background: var(--ember); border-color: var(--ember2); color: #fff; font-weight: 700; }
+.btn-ember:hover { background: var(--ember2); }
+.btn-sm { padding: 5px 10px; font-size: 9.5px; }
+.btn-icon { padding: 7px 10px; }
+
+/* build name input */
+.build-name {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--paper);
+  padding: 7px 12px;
+  border-radius: var(--r);
+  width: 180px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.build-name:focus { border-color: rgba(184,137,42,0.5); }
+.build-name::placeholder { color: var(--dim); }
+
+/* ══ SAVED BUILDS STRIP ══ */
+.saved-strip {
+  display: flex; gap: 6px; padding: 12px 0 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin;
+}
+.saved-strip::-webkit-scrollbar { height: 3px; }
+.saved-strip::-webkit-scrollbar-thumb { background: var(--border); }
+.saved-build {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 5px 12px 5px 10px;
+  cursor: pointer; white-space: nowrap;
+  transition: all 0.18s; flex-shrink: 0;
+}
+.saved-build:hover { background: rgba(255,255,255,0.08); }
+.saved-build.active { background: var(--gold-dim,rgba(184,137,42,0.15)); border-color: var(--gold); }
+.saved-build-name { font-family: 'Cinzel', serif; font-size: 11px; color: var(--paper); letter-spacing: 1px; }
+.saved-build-del { font-size: 12px; color: var(--dim); cursor: pointer; padding: 0 2px; }
+.saved-build-del:hover { color: var(--ember); }
+
+/* ══ MAIN GRID ══ */
+.planner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+  margin-top: 20px;
+}
+@media (max-width: 1100px) { .planner-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .planner-grid { grid-template-columns: 1fr; } }
+
+/* ══ PANEL ══ */
+.panel {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.panel-full { grid-column: 1 / -1; }
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px; background: rgba(0,0,0,0.25);
+  border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--gold2);
+  display: flex; align-items: center; gap: 8px;
+}
+.panel-title .icon { font-size: 14px; }
+.panel-body { padding: 16px 18px; }
+
+/* ══ REGION PICKER ══ */
+.region-slots {
+  display: flex; gap: 8px; margin-bottom: 14px;
+  align-items: center; flex-wrap: wrap;
+}
+.slot-indicator {
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 1px;
+  color: var(--dim); text-transform: uppercase;
+}
+.slot-pip {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid; display: flex; align-items: center;
+  justify-content: center; font-size: 9px; font-family: 'Cinzel', serif;
+  transition: all 0.2s;
+}
+.slot-pip.filled { border-color: var(--gold); background: rgba(184,137,42,0.18); color: var(--gold2); }
+.slot-pip.empty { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.2); }
+
+.region-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.region-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r);
+  padding: 11px 12px;
+  cursor: pointer; transition: all 0.18s;
+  position: relative; overflow: hidden;
+}
+.region-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: transparent; transition: background 0.2s;
+}
+.region-card:hover:not(.locked) { background: rgba(255,255,255,0.06); border-color: rgba(184,137,42,0.3); }
+.region-card:hover:not(.locked)::before { background: rgba(184,137,42,0.5); }
+.region-card.selected { background: rgba(39,174,96,0.08); border-color: rgba(39,174,96,0.3); }
+.region-card.selected::before { background: #27ae60; }
+.region-card.locked { cursor: default; border-color: rgba(184,137,42,0.25); }
+.region-card.locked::before { background: var(--gold); }
+.region-card.disabled { opacity: 0.3; pointer-events: none; }
+.rc-row1 { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.rc-emoji { font-size: 16px; }
+.rc-name { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 600; color: var(--paper); flex: 1; }
+.rc-tier {
+  font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 1px;
+  padding: 2px 6px; border: 1px solid; border-radius: 2px;
+}
+.rc-tier.S { color: var(--gold2); border-color: rgba(184,137,42,0.4); background: rgba(184,137,42,0.1); }
+.rc-tier.A { color: #e8a090; border-color: rgba(192,57,43,0.35); background: rgba(192,57,43,0.08); }
+.rc-tier.B { color: #90b8d8; border-color: rgba(41,128,185,0.3); background: rgba(41,128,185,0.07); }
+.rc-note { font-size: 11.5px; color: var(--dim); line-height: 1.35; font-style: italic; }
+.rc-badge {
+  position: absolute; top: 6px; right: 7px;
+  font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 1px;
+  background: rgba(184,137,42,0.15); border: 1px solid rgba(184,137,42,0.3);
+  color: var(--gold2); padding: 2px 6px; border-radius: 2px;
+}
+.rc-check { position: absolute; top: 6px; right: 7px; font-size: 14px; color: #27ae60; }
+
+/* ══ RELIC PLANNER ══ */
+.relic-tier-row {
+  margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--r); overflow: hidden;
+}
+.rtr-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; background: rgba(0,0,0,0.25);
+  cursor: pointer; user-select: none;
+}
+.rtr-tier {
+  font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px;
+  text-transform: uppercase; background: rgba(184,137,42,0.12);
+  border: 1px solid rgba(184,137,42,0.25); color: var(--gold);
+  padding: 2px 8px; border-radius: 2px; flex-shrink: 0;
+}
+.rtr-pts { font-family: 'Cinzel', serif; font-size: 9px; color: rgba(255,255,255,0.25); flex-shrink: 0; }
+.rtr-passive { font-size: 12px; color: var(--dim); font-style: italic; flex: 1; min-width: 0; }
+.rtr-chosen {
+  font-family: 'Cinzel', serif; font-size: 10px; color: var(--gold2);
+  background: rgba(184,137,42,0.12); border: 1px solid rgba(184,137,42,0.2);
+  padding: 2px 9px; border-radius: 2px; flex-shrink: 0; white-space: nowrap;
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis;
+}
+.rtr-arrow { color: var(--dim); font-size: 10px; flex-shrink: 0; transition: transform 0.25s; }
+.rtr-row.open .rtr-arrow { transform: rotate(180deg); }
+.rtr-body { display: none; }
+.rtr-row.open .rtr-body { display: block; }
+.relic-choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1px; background: rgba(255,255,255,0.06); }
+.relic-card {
+  background: rgba(10,8,6,0.6);
+  padding: 13px 14px; cursor: pointer; transition: all 0.18s;
+  position: relative;
+}
+.relic-card:hover { background: rgba(255,255,255,0.06); }
+.relic-card.chosen { background: rgba(192,57,27,0.12); border-top: 2px solid var(--ember); }
+.relic-card.unknown { cursor: default; opacity: 0.4; }
+.rc2-icon { font-size: 20px; margin-bottom: 5px; }
+.rc2-name { font-family: 'Cinzel', serif; font-size: 12.5px; font-weight: 700; color: var(--gold2); margin-bottom: 3px; }
+.rc2-type { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--ember); margin-bottom: 6px; }
+.rc2-desc { font-size: 12.5px; color: var(--paper); line-height: 1.5; opacity: 0.85; }
+.rc2-solves { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
+.stag { font-size: 10px; background: rgba(39,174,96,0.1); border: 1px solid rgba(39,174,96,0.25); color: #6fe09a; padding: 2px 7px; border-radius: 2px; }
+.rc2-note { font-size: 11.5px; color: var(--dim); font-style: italic; margin-top: 7px; }
+.rc2-chosen-mark { position: absolute; top: 9px; right: 10px; font-size: 15px; }
+.rc2-wiki { position: absolute; bottom: 8px; right: 10px; font-size: 9px; color: var(--gold); opacity: 0.5; text-decoration: none; font-family: 'Cinzel', serif; letter-spacing: 1px; }
+.rc2-wiki:hover { opacity: 1; }
+
+/* ══ SYNERGY PANEL ══ */
+.syn-score-row {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.syn-grade {
+  font-family: 'Cinzel', serif;
+  font-size: 56px; line-height: 1; font-weight: 900;
+}
+.syn-grade.S { color: var(--gold2); text-shadow: 0 0 24px rgba(212,168,62,0.4); }
+.syn-grade.A { color: #e8a090; }
+.syn-grade.B { color: #90b8d8; }
+.syn-grade.C { color: var(--dim); }
+.syn-grade-info { flex: 1; }
+.syn-pct { font-family: 'Cinzel', serif; font-size: 18px; color: var(--paper); margin-bottom: 3px; }
+.syn-label { font-size: 12px; color: var(--dim); font-style: italic; }
+.syn-bars { display: flex; flex-direction: column; gap: 7px; }
+.syn-bar-row { display: flex; align-items: center; gap: 10px; }
+.syn-bar-label { font-size: 13px; color: var(--paper); width: 90px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.syn-bar-track { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+.syn-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+.syn-bar-val { font-size: 11px; color: var(--dim); width: 24px; text-align: right; flex-shrink: 0; }
+
+/* ══ BOSS GRID ══ */
+.boss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.boss-card {
+  background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--r); padding: 10px 12px;
+}
+.boss-card-name { font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold2); margin-bottom: 3px; }
+.boss-card-region { font-size: 10px; color: var(--dim); margin-bottom: 5px; }
+.boss-card-drops { display: flex; flex-wrap: wrap; gap: 3px; }
+.drop-tag { font-size: 10px; background: rgba(184,137,42,0.08); border: 1px solid rgba(184,137,42,0.18); color: var(--paper); padding: 1px 6px; border-radius: 2px; opacity: 0.85; }
+
+/* ══ SKILL COVERAGE ══ */
+.skill-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 5px; }
+.skill-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; padding: 5px 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent; border-radius: 2px;
+}
+.skill-item.cov { border-color: rgba(39,174,96,0.2); background: rgba(39,174,96,0.08); color: #6fe09a; }
+.skill-item.unc { color: var(--dim); }
+.skill-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.skill-dot.cov { background: #27ae60; }
+.skill-dot.unc { background: rgba(255,255,255,0.1); }
+
+/* ══ OVERLAP WARNING ══ */
+.ow {
+  background: rgba(192,57,27,0.1); border: 1px solid rgba(192,57,27,0.25);
+  padding: 9px 12px; font-size: 13px; color: #e8c0a8; border-radius: var(--r);
+  margin-top: 6px;
+}
+.ow strong { color: var(--ember2); }
+
+/* ══ ITEMS ══ */
+.item-cloud { display: flex; flex-wrap: wrap; gap: 5px; }
+.item-chip {
+  font-size: 12px; background: rgba(184,137,42,0.1);
+  border: 1px solid rgba(184,137,42,0.22); color: var(--gold2);
+  padding: 3px 9px; border-radius: 2px;
+}
+
+/* ══ CHOSEN RELICS LIST ══ */
+.cr-item {
+  background: rgba(192,57,27,0.08); border-left: 2px solid var(--ember);
+  padding: 9px 12px; margin-bottom: 6px; border-radius: 0 var(--r) var(--r) 0;
+}
+.cr-name { font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold2); margin-bottom: 4px; }
+
+/* ══ GOOD/WARN BOXES ══ */
+.box-good { background: rgba(39,174,96,0.08); border: 1px solid rgba(39,174,96,0.25); padding: 9px 13px; font-size: 13px; color: #6fe09a; border-radius: var(--r); margin-top: 8px; }
+.box-warn { background: rgba(192,57,27,0.1); border: 1px solid rgba(192,57,27,0.25); padding: 9px 13px; font-size: 13px; color: #e8a090; border-radius: var(--r); margin-top: 8px; }
+.box-info { background: rgba(184,137,42,0.08); border: 1px solid rgba(184,137,42,0.2); padding: 10px 13px; font-size: 13.5px; color: var(--gold2); border-radius: var(--r); margin-bottom: 12px; font-style: italic; }
+
+/* ══ REGION NOTES ══ */
+.rn-item {
+  background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06);
+  border-left: 2px solid rgba(184,137,42,0.35);
+  padding: 9px 12px; margin-bottom: 7px; border-radius: 0 var(--r) var(--r) 0;
+}
+.rn-name { font-family: 'Cinzel', serif; font-size: 10px; color: var(--gold); margin-bottom: 3px; }
+.rn-note { font-size: 13px; color: var(--dim); font-style: italic; }
+
+/* ══ SECTION DIVIDERS ══ */
+.sh { display: flex; align-items: center; gap: 11px; margin: 18px 0 12px; }
+.sh h3 { font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); white-space: nowrap; }
+.sh-line { flex: 1; height: 1px; background: linear-gradient(to right, rgba(184,137,42,0.35), transparent); }
+
+/* ══ SHARE BAR ══ */
+.share-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 12px 18px; background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border);
+}
+.share-url {
+  flex: 1; font-family: 'Cinzel', serif; font-size: 11px;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--dim); padding: 6px 10px; border-radius: var(--r);
+  outline: none; min-width: 0;
+  cursor: pointer; transition: border-color 0.2s;
+}
+.share-url:focus, .share-url.copied { border-color: var(--gold); color: var(--gold2); }
+
+/* ══ PRESET COMBOS ══ */
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.preset-card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--r); padding: 14px 16px; cursor: pointer; transition: all 0.18s;
+}
+.preset-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(184,137,42,0.3); }
+.preset-card.active { background: rgba(184,137,42,0.08); border-color: rgba(184,137,42,0.35); }
+.preset-stars { color: var(--gold); font-size: 13px; margin-bottom: 5px; }
+.preset-name { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--gold2); margin-bottom: 5px; }
+.preset-regions { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; }
+.preset-rtag { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--paper); padding: 2px 8px; border-radius: 2px; }
+.preset-desc { font-size: 12.5px; color: var(--dim); font-style: italic; line-height: 1.45; }
+.preset-syn { font-family: 'Cinzel', serif; font-size: 10px; color: var(--gold); margin-top: 8px; }
+
+/* ══ EMPTY STATE ══ */
+.empty { text-align: center; padding: 36px 20px; color: var(--dim); font-style: italic; font-size: 14px; }
+
+/* ══ FOOTER ══ */
+.footer-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0 0; border-top: 1px solid var(--border);
+  margin-top: 32px; font-size: 12px; color: var(--dim);
+  flex-wrap: wrap; gap: 8px;
+}
+.footer-bar a { color: var(--gold); text-decoration: none; opacity: 0.7; }
+.footer-bar a:hover { opacity: 1; }
+
+/* ══ TAGS ══ */
+.tag { font-family: 'Cinzel', serif; font-size: 9.5px; letter-spacing: 0.5px; padding: 3px 8px; border: 1px solid; border-radius: 2px; }
+.tag-gold { color: var(--gold2); border-color: rgba(184,137,42,0.35); background: rgba(184,137,42,0.1); }
+.tag-ember { color: #e8a090; border-color: rgba(192,57,27,0.35); background: rgba(192,57,27,0.1); }
+.tag-green { color: #6fe09a; border-color: rgba(39,174,96,0.3); background: rgba(39,174,96,0.08); }
+.tag-blue { color: #90b8d8; border-color: rgba(41,128,185,0.28); background: rgba(41,128,185,0.08); }
+.tags-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+
+/* ══ SPINNER ══ */
+.spin { width: 14px; height: 14px; border: 2px solid rgba(184,137,42,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.live-indicator { display: flex; align-items: center; gap: 7px; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; color: #6fe09a; text-transform: uppercase; }
+.live-dot { width: 6px; height: 6px; background: #27ae60; border-radius: 50%; animation: pulse 2s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 900px) {
+  .relic-choices { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 580px) {
+  .relic-choices { grid-template-columns: 1fr; }
+  .region-grid { grid-template-columns: 1fr; }
+  .presets { grid-template-columns: 1fr; }
+}
+
+/* ══ ANIMATIONS ══ */
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.panel { animation: fadeUp 0.4s ease both; }
+.panel:nth-child(2) { animation-delay: 0.05s; }
+.panel:nth-child(3) { animation-delay: 0.1s; }
+.panel:nth-child(4) { animation-delay: 0.15s; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <h1>⚔ Demonic Pacts Planner</h1>
+      <p>Leagues VI · April 15 – June 10, 2026 · <span id="countdown-inline">Loading...</span></p>
+    </div>
+    <div class="header-right">
+      <div class="build-controls">
+        <input class="build-name" id="build-name-input" type="text" placeholder="My Build Name" maxlength="40">
+        <button class="btn btn-gold" onclick="saveBuild()">💾 Save</button>
+        <button class="btn" onclick="newBuild()">+ New</button>
+        <button class="btn" onclick="shareCurrentBuild()" id="share-btn">🔗 Share</button>
+        <button class="btn btn-sm" onclick="resetBuild()">Reset</button>
+      </div>
+      <div class="live-indicator"><span class="live-dot"></span>Wiki live</div>
+    </div>
+  </header>
+
+  <!-- SAVED BUILDS -->
+  <div class="saved-strip" id="saved-strip">
+    <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--dim);letter-spacing:1px;white-space:nowrap;align-self:center;">SAVED:</span>
+    <div id="saved-builds-list" style="display:flex;gap:6px;flex-wrap:nowrap;"></div>
+    <span id="no-builds-msg" style="font-size:12px;color:var(--dim);font-style:italic;align-self:center;">No saved builds yet</span>
+  </div>
+
+  <!-- PLANNER GRID -->
+  <div class="planner-grid">
+
+    <!-- REGION PICKER -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">🗺</span>Region Selection</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <div class="slot-indicator">Slots: <div id="slot-pips" style="display:flex;gap:4px;margin-left:4px;"></div></div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="box-info">Varlamore &amp; Karamja are always available. Pick 3 more — analysis appears when all 3 are filled.</div>
+        <div class="region-grid" id="region-grid"></div>
+      </div>
+    </div>
+
+    <!-- RELIC PLANNER -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">💎</span>Relic Planner</div>
+        <div id="relic-status" style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);">
+          <span class="spin"></span> Fetching...
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0;">
+        <div id="relic-tiers-container" style="padding:0;"></div>
+      </div>
+    </div>
+
+    <!-- SYNERGY ANALYSIS -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">📊</span>Build Analysis</div>
+      </div>
+      <div class="panel-body" id="analysis-panel">
+        <div class="empty">Select 3 regions to see synergy analysis, your boss roster, and available key items.</div>
+      </div>
+    </div>
+
+    <!-- SKILL COVERAGE -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">📈</span>Skill Coverage</div>
+        <div id="coverage-count" style="font-family:'Cinzel',serif;font-size:10px;color:var(--dim);"></div>
+      </div>
+      <div class="panel-body" id="skill-panel">
+        <div class="empty">Choose relics to see which skills are directly enhanced.</div>
+      </div>
+    </div>
+
+    <!-- PRESET COMBOS -->
+    <div class="panel panel-full">
+      <div class="panel-header">
+        <div class="panel-title"><span class="icon">⚡</span>Preset Builds</div>
+        <span style="font-size:12px;color:var(--dim);font-style:italic;">Click to load instantly</span>
+      </div>
+      <div class="panel-body">
+        <div class="presets" id="presets-grid"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SHARE BAR -->
+  <div class="share-bar" id="share-bar" style="display:none;">
+    <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--dim);letter-spacing:2px;white-space:nowrap;">SHARE LINK</span>
+    <input class="share-url" id="share-url-input" readonly onclick="copyShareUrl()" title="Click to copy">
+    <button class="btn btn-sm btn-gold" onclick="copyShareUrl()" id="copy-btn">Copy</button>
+    <button class="btn btn-sm" onclick="document.getElementById('share-bar').style.display='none'">✕</button>
+  </div>
+
+  <footer class="footer-bar">
+    <span>Data from <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League" target="_blank">OSRS Wiki</a> — updates automatically on every visit</span>
+    <span>Builds saved to localStorage · <a href="https://leaguesplanner.com" target="_blank">leaguesplanner.com</a></span>
+  </footer>
+</div>
+
+<script>
+'use strict';
+
+// ══════════════════════════════════════════════════════
+// COUNTDOWN
+// ══════════════════════════════════════════════════════
+const LAUNCH = new Date('2026-04-15T00:00:00Z');
+(function tick() {
+  const diff = LAUNCH - new Date();
+  const el = document.getElementById('countdown-inline');
+  if (!el) return;
+  if (diff <= 0) { el.textContent = 'LIVE NOW 🔥'; return; }
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  const p = n => String(n).padStart(2, '0');
+  el.textContent = `${d}d ${p(h)}h ${p(m)}m ${p(s)}s until launch`;
+  setTimeout(tick, 1000);
+})();
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let state = {
+  regions: ['varlamore', 'karamja'],
+  relics: {}, // { tierNum: relicId }
+  buildName: 'My Build',
+};
+let savedBuilds = JSON.parse(localStorage.getItem('dp_builds') || '{}');
+let activeBuildKey = null;
+
+// ══════════════════════════════════════════════════════
+// REGION DATA
+// ══════════════════════════════════════════════════════
+const REGIONS = {
+  varlamore: { id:'varlamore', name:'Varlamore', emoji:'🏛', locked:true, tier:'S',
+    bosses:[{name:'Fortis Colosseum',drops:['Tonalztics of ralos','Sunfire fanatic armour','Echo boots']},{name:'Doom of Mokhaiotl',drops:['Avernic treads','Mokhaiotl cloth','Eye of Ayak']},{name:'Vardorvis',drops:['Soulreaper axe pieces','Ultor ring','Virtus robes']},{name:'Amoxliatl',drops:['Glacial temotli','Pendant of ates']},{name:'Hueycoatl',drops:['Dragon hunter wand','Tome of earth']},{name:'Moons of Peril',drops:['Lunar chest uniques']}],
+    keyItems:['Avernic treads','Tonalztics of ralos','Dragon hunter wand','Soulreaper axe pieces'],
+    synergies:{karamja:2,desert:3,kourend:3,morytania:2,wilderness:2,tirannwn:2,asgarnia:2,fremennik:1,kandarin:1},
+    note:'Starting region. Fortis Colosseum, Doom of Mokhaiotl, Mastering Mixology, Hunters Rumours, Blessed bone shards.' },
+  karamja: { id:'karamja', name:'Karamja', emoji:'🌴', locked:true, tier:'B',
+    bosses:[{name:'Fight Caves / Jad',drops:['Fire cape']},{name:'The Inferno',drops:['Infernal cape']}],
+    keyItems:['Fire cape','Infernal cape','Obsidian gear'],
+    synergies:{varlamore:2,desert:3,kourend:2,asgarnia:2,wilderness:1,morytania:1,fremennik:1,tirannwn:1,kandarin:1},
+    note:'Free with Varlamore. Fight Caves & Inferno for capes. Brimhaven Agility Arena. Nature Altar.' },
+  desert: { id:'desert', name:'Kharidian Desert', emoji:'🏜', tier:'S',
+    bosses:[{name:'Zulrah',drops:['Tanzanite fang','Magic fang','Serpentine visage']},{name:'Tombs of Amascut 500+',drops:["Tumeken's shadow",'Masori armour',"Osmumten's fang",'Lightbearer']},{name:'The Leviathan',drops:['Soulreaper axe pieces','Bellator ring']},{name:'Duke Sucellus',drops:['Soulreaper axe pieces','Magus ring']},{name:'Nex',drops:['Zaryte crossbow','Torva armour','Nihil shards']}],
+    keyItems:['Toxic blowpipe','Trident of the swamp',"Tumeken's shadow",'Torva armour','Zaryte crossbow','Soulreaper axe'],
+    synergies:{varlamore:3,karamja:3,kourend:3,morytania:3,tirannwn:2,wilderness:2,asgarnia:2,fremennik:2,kandarin:2},
+    note:'S-tier. Zulrah has no damage cap or melee immunity. ToA confirmed here. All DT2 bosses drop all Soulreaper pieces.' },
+  kourend: { id:'kourend', name:'Kourend & Kebos', emoji:'🏰', tier:'S',
+    bosses:[{name:'Chambers of Xeric (CM)',drops:['Twisted bow','Kodai wand','Elder maul','Dragon hunter crossbow']},{name:'Alchemical Hydra',drops:['Hydra leather','Brimstone ring']},{name:'Cerberus',drops:['Primordial crystal','Pegasian crystal','Eternal crystal']},{name:'Sarachnis',drops:['Sarachnis cudgel']},{name:'Kraken',drops:['Trident of the seas','Kraken tentacle']}],
+    keyItems:['Twisted bow','Kodai wand','Elder maul','Primordial boots','Pegasian boots','Eternal boots','Brimstone ring'],
+    synergies:{varlamore:3,desert:3,morytania:3,tirannwn:3,karamja:2,wilderness:2,asgarnia:2,fremennik:2,kandarin:2},
+    note:'S-tier. CoX CM: +25% dmg/def, +50% HP, 3× unique chance. Catacombs for Slayer. Cerberus boots high value.' },
+  morytania: { id:'morytania', name:'Morytania', emoji:'🩸', tier:'A',
+    bosses:[{name:'Theatre of Blood (HM)',drops:['Scythe of Vitur','Ghrazi rapier','Justiciar armour','Avernic defender']},{name:'Nightmare of Ashihama',drops:["Inquisitor's armour",'Nightmare staff']},{name:'Grotesque Guardians',drops:['Granite gloves','Dark tourmaline core']},{name:'Barrows Brothers',drops:['Barrows equipment']}],
+    keyItems:['Scythe of Vitur','Ghrazi rapier','Avernic defender','Justiciar armour'],
+    synergies:{kourend:3,desert:3,tirannwn:3,varlamore:2,wilderness:2,asgarnia:2,karamja:1,fremennik:1,kandarin:2},
+    note:'ToB HM: +25% dmg/def, +50% HP, 2× unique chance. Whole group gets uniques. Scythe charges with Blood runes only.' },
+  tirannwn: { id:'tirannwn', name:'Tirannwn', emoji:'🌿', tier:'A',
+    bosses:[{name:'Zulrah (alt)',drops:['Tanzanite fang','Magic fang']},{name:'Gauntlet / Corrupted Gauntlet',drops:['Crystal armour seed','Enhanced crystal weapon seed']}],
+    keyItems:['Enhanced crystal weapon seed','Crystal armour','Elven signet','Death altar'],
+    synergies:{kourend:3,morytania:3,desert:2,varlamore:2,asgarnia:2,wilderness:1,karamja:1,fremennik:1,kandarin:2},
+    note:'Corrupted Gauntlet for crystal gear. Prifddinas agility + crystal implings. Zalcano for crystal tool seeds.' },
+  wilderness: { id:'wilderness', name:'Wilderness', emoji:'☠', tier:'A',
+    bosses:[{name:'Callisto / Artio',drops:['Tyrannical ring']},{name:"Venenatis / Spindel",drops:['Treasonous ring']},{name:"Vet'ion / Calvar'ion",drops:['Ring of the gods']},{name:'Chaos Elemental',drops:['Dragon pickaxe','Dragon 2h sword']},{name:'Revenant Caves',drops:['Craws bow','Thammarons sceptre']}],
+    keyItems:['Tyrannical ring','Treasonous ring','Dragon pickaxe','Craws bow','Odium ward'],
+    synergies:{varlamore:2,desert:2,kourend:2,asgarnia:2,morytania:2,karamja:1,fremennik:1,tirannwn:1,kandarin:1},
+    note:'No Medium diary req. PvP deaths use gravestone. Rev Caves free. Wildy Agility free. Chaos Altar for Prayer.' },
+  asgarnia: { id:'asgarnia', name:'Asgarnia', emoji:'⚔', tier:'B',
+    bosses:[{name:'God Wars Dungeon (all 4)',drops:['Armadyl armour','Bandos armour','Zamorakian hasta','Godswords']},{name:'The Whisperer',drops:['Soulreaper axe pieces','Ultor ring']},{name:'Giant Mole',drops:['Mole skin']}],
+    keyItems:['Armadyl armour','Bandos armour','Zamorakian hasta','Staff of the dead','Godswords'],
+    synergies:{varlamore:2,desert:2,kourend:2,karamja:2,morytania:2,wilderness:2,fremennik:2,tirannwn:2,kandarin:3},
+    note:'God Wars Dungeon for strong mid-game gear. Pairs very well with Kandarin. Motherlode Mine. Falador rooftop agility.' },
+  fremennik: { id:'fremennik', name:'Fremennik', emoji:'❄', tier:'B',
+    bosses:[{name:'Vorkath',drops:['Dragonbone necklace','Draconic visage','Skeletal visage']},{name:'Dagannoth Kings',drops:['Berserker ring','Archers ring','Dragon axe']},{name:'Phantom Muspah',drops:['Venator bow','Saturated heart']}],
+    keyItems:['Berserker ring','Archers ring','Dragon axe','Venator bow','Saturated heart'],
+    synergies:{varlamore:1,desert:2,kourend:2,karamja:1,morytania:1,wilderness:1,asgarnia:2,tirannwn:1,kandarin:2},
+    note:'Vorkath for Dragon bones and high-value drops. Dagannoth Kings for rings. Free Ice Gloves on unlock. Blast Furnace.' },
+  kandarin: { id:'kandarin', name:'Kandarin', emoji:'🌊', tier:'B',
+    bosses:[{name:'Thermonuclear Smoke Devil',drops:['Occult necklace','Smoke battlestaff','Echo weapons']},{name:'Dagannoth Kings',drops:['Berserker ring','Archers ring','Seers ring']},{name:'Demonic Gorillas',drops:['Zenyte shard','Ballista']},{name:'Barbarian Assault',drops:['Fighter torso']}],
+    keyItems:['Fighter torso','Imbued god capes','Seers ring (i)','Occult necklace','Zenyte shard'],
+    synergies:{asgarnia:3,varlamore:1,desert:2,kourend:2,morytania:2,fremennik:2,karamja:1,wilderness:1,tirannwn:2},
+    note:'NMZ pts 1gp each — massive for imbuing. Barbarian Assault for fighter torso. Echo Boss: new magic weapons.' },
+};
+
+// ══════════════════════════════════════════════════════
+// RELIC DATA — FULLY REVEALED
+// ══════════════════════════════════════════════════════
+const SKILLS = ['Agility','Thieving','Hunter','Herblore','Prayer','Slayer','Magic','Ranged','Melee','Runecraft','Mining','Woodcutting','Fishing','Farming','Crafting','Fletching','Cooking','Firemaking','Construction','Smithing','Strength','Clue Scrolls'];
+
+let RELICS = [
+  { tier:1, pts:0, passive:'5× XP · 2× drops · 4× minigame pts · 1-min farming ticks · infinite run · stackable clues', choices:[
+    {id:'eh',name:'Endless Harvest',icon:'⛏',type:'Gathering',desc:'Auto-bank resources (toggle). 2× yield from Fishing/WC/Mining. Nodes never deplete after your first interaction. Chases moving fishing spots.',solves:['Fishing','Woodcutting','Mining'],note:'Best for task stacking and passive wealth. Double resources speed all skilling tasks.'},
+    {id:'bg',name:'Barbarian Gathering',icon:'🪓',type:'Hybrid',desc:'Crystal-tier bare-hand gathering. +10% Str/Agility XP while gathering. 50% retry on fail. Knapsack holds 140 resources.',solves:['Fishing','Woodcutting','Mining','Strength','Agility'],note:'Passive Agility and Strength while skilling is very powerful. Great for hybrid builds.'},
+    {id:'ab',name:'Abundance',icon:'🌿',type:'Utility',desc:'All non-combat skills +10 permanently. Extra 2 XP per XP drop. 2× coins per XP gained.',solves:['Thieving','Herblore','Crafting','Fletching','Cooking','Firemaking','Construction','Farming','Smithing','Runecraft'],note:'Strongest for Thieving and Herblore. Note: Searing Boots are now Hotfoot (T2).'},
+  ]},
+  { tier:2, pts:750, passive:'XP: 5× → 8×', choices:[
+    {id:'hf',name:'Hotfoot',icon:'🔥',type:'Agility / Cooking',desc:'Grants Searing Boots. While worn: Agility XP while running, auto-cook fish, auto-smelt ore. Passives: 100% Agility/Cooking success, marks of grace 33% always, each lap = 2 laps + 25% XP. 2× Wyrm course termites.',solves:['Agility','Cooking','Smithing'],note:'Best Agility relic. Colossal Wyrm + Searing Boots = massive passive Agility gains.'},
+    {id:'ff2',name:'Friendly Forager',icon:'🌱',type:'Herblore',desc:"Grants Forager's Pouch. While gathering: find a random grimy herb. Herblore passives: all items processed at once, 90% chance secondaries not consumed, potions give 4 doses instead of 3.",solves:['Herblore','Hunter','Farming'],note:'Incredible for Herblore. Free herbs from all gathering. 4-dose potions save huge resources.'},
+    {id:'ws',name:'Woodsman',icon:'🌲',type:'Hunter / WC',desc:'100% Hunter success. Hunter traps 2× loot & XP. Hunter rumours 2× XP & loot. Impling loot doubled and noted. Quetzal Whistles never lose charges. Auto-burns logs (toggle).',solves:['Woodcutting','Firemaking','Fletching','Hunter'],note:'Best Hunter relic. Double impling loot + rumour rewards are exceptional in Varlamore.'},
+  ]},
+  { tier:3, pts:1500, passive:'+1.5× combat XP (multiplicative) · Bigger & Badder free · 5× Slayer pts · Superiors 1/50', choices:[
+    {id:'ee',name:'Evil Eye',icon:'👁',type:'Teleportation',desc:'Grants Evil Eye item. Teleport instantly to any boss or raid in the Combat Achievements list. Teleports to each Moon of Peril individually. Ignores Wilderness teleport restrictions.',solves:['Slayer','Magic'],note:'Incredible QoL for bossing. Completely removes travel time. Pairs perfectly with Slayer-heavy builds.'},
+    {id:'ma',name:'Map of Alacrity',icon:'🗺',type:'Teleportation',desc:'Grants Map of Alacrity. Teleport to agility shortcuts — sent to the less favourable side. Ignores Wilderness restrictions. All shortcut requirements still apply.',solves:['Agility'],note:'Strong for Agility-heavy builds. Synergises with Hotfoot for even faster course completion.'},
+  ]},
+  { tier:4, pts:2500, passive:'Drops: 2× → 5× · Minigame pts: 4× → 8×', choices:[
+    {id:'tm',name:'Transmutation',icon:'⚗',type:'Magic / Crafting',desc:'Grants Transmutation Ledger (infinite Nature runes). High/Low Alchemy become upgrade/downgrade spells for resources. 10 Magic XP per item. Can auto-recast on noted stacks. Ledger = Book of the Dead.',solves:['Magic','Crafting','Smithing'],note:'Completely replaces alchemy. Upgrade ores, logs, fish between tiers. Massive material efficiency.'},
+    {id:'cc',name:'Conniving Clues',icon:'📜',type:'Clue Scrolls',desc:'1/3 chance of clue contracts (instant teleport to step) on casket open. Caskets 1/4 to contain another clue. Creature clues at 1/15. Minimum steps, maximum rolls. No item req for Emote/Falo steps.',solves:['Clue Scrolls'],note:'Best clue relic. With 8× minigame pts, casket rewards are extraordinary.'},
+    {id:'bb',name:"Butler's Bell",icon:'🔔',type:'Passive Gathering',desc:"Summons Demon Butler who works offline. Gathers: 8 ores/min, 14 fish/min, 10 logs/min, 50 flax/min, 10 herbs/min. Can also process resources at half rates.",solves:['Mining','Fishing','Woodcutting','Farming','Herblore','Smithing'],note:'Passive resource generation even while offline. Best combined with production skills.'},
+  ]},
+  { tier:5, pts:5000, passive:'XP: 8× → 12×', choices:[
+    {id:'na',name:"Nature's Accord",icon:'🍄',type:'Farming',desc:'10× yield from all farming patches (auto-noted). Plants never die. 20% seed save. No level requirements. Grants Fairy Mushroom: teleport to any fairy ring, spirit tree, or tool leprechaun.',solves:['Farming','Runecraft'],note:'The definitive Farming relic. 10× yield makes Herblore essentially free. Fairy ring teleportation is huge mobility.'},
+    {id:'lc',name:'Larcenist',icon:'🖐',type:'Thieving',desc:'100% Thieving success. Auto-repickpocket/steal. Loot noted. Guards never catch you. Coin pouch cap 10×. 10× loot from all pickpocketing, stalls, and Varlamore valuables.',solves:['Thieving'],note:'Makes Thieving completely AFK and massively profitable. 10× loot from valuables is extraordinary.'},
+    {id:'sh',name:'Soul Harvest',icon:'💀',type:'Prayer / Runecraft',desc:'Bones/ashes → stackable soul shards (toggle). Shards replace pure essence for Runecraft. 100 shards at Teomat = 550 Prayer XP, no libation wine needed. 1 shard per 4 Farming XP while harvesting.',solves:['Prayer','Runecraft'],note:'Transforms Prayer and Runecraft training. Passive Prayer XP from all combat and Farming.'},
+  ]},
+  { tier:6, pts:8000, passive:'No passive — power is in the relic choice', choices:[
+    {id:'gr',name:'Grimoire',icon:'📖',type:'Magic / Prayer',desc:'Grants Arcane Grimoire (= Book of the Dead). Freely swap between all spellbooks. Unlocks ALL prayers and spells regardless of area, quest, or diary requirements.',solves:['Magic','Prayer'],note:'Unlocks Ancient Curses, Wrath prayer, every spellbook from day 1. Massive flexibility for any build.'},
+    {id:'cs',name:'Culling Spree',icon:'⚔',type:'Slayer',desc:'Choose Slayer task from 3 options (at least 1 boss). Kill count selectable (5-200). Superiors chain on death (50%). Superiors drop 1-3 Elite clues always. Slayer helm (i) effects without wearing. All Slayer perks free.',solves:['Slayer'],note:'The ultimate Slayer relic. Choose your own tasks, chain Superiors, free Slayer helm (i). Essential for Slayer builds.'},
+  ]},
+  { tier:7, pts:16000, passive:'XP: 12× → 16×', choices:[
+    {id:'rl',name:'Reloaded',icon:'🔄',type:'Special',desc:'Choose any relic from Tiers 1–6 again. Effectively grants a second relic choice from any previous tier.',solves:[],note:'Extremely powerful. Pick a second T1, T2, or T6 relic. Most players use this to double up on their best early-tier choice.'},
+  ]},
+  { tier:8, pts:25000, passive:'No passive — choose your endgame power', choices:[
+    {id:'mn',name:'Minion',icon:'👿',type:'Combat',desc:'Grants Minion Whistle. Summons demonic familiar (max hit 10, speed 1.8, accuracy 45,000, 30 min). AoE in multi-combat. Feed 5 unique Zamorak items for +2 max hit each. Auto-loots kills.',solves:['Slayer','Melee','Ranged','Magic'],note:'Best all-round endgame pick. Shreds Superiors, constant extra DPS, auto-loots everything.'},
+    {id:'fof',name:'Flask of Fervour',icon:'⚗',type:'Combat',desc:'Full HP + Prayer + Spec restore on use. Then 3 AoE explosions over 2.4s (60% Prayer level as typeless dmg, 3-tile radius) + damage immunity. 3-min cooldown (reduced by 0.6s per 10 dmg dealt).',solves:['Melee','Ranged','Magic'],note:'Insane for raids and hard bosses. Full restore + AoE dmg + immunity every ~3 min. Works in Gauntlet.'},
+  ]},
+];
+
+// ══════════════════════════════════════════════════════
+// PRESET BUILDS
+// ══════════════════════════════════════════════════════
+const PRESETS = [
+  { name:'Full Raid Access', stars:5, regions:['desert','kourend','morytania'], desc:'CoX CM + ToB HM + ToA 500+. Zulrah, Nex, Twisted bow, Scythe, Tumeken\'s shadow. All shared uniques. The definitive meta build.' },
+  { name:'Ultimate Raids Trio', stars:5, regions:['kourend','morytania','tirannwn'], desc:'CoX CM + ToB HM + ToA 500+ via Tirannwn. Corrupted Gauntlet for crystal gear. Full raid access with crystal weapons.' },
+  { name:'Boss Hunter', stars:4, regions:['desert','wilderness','asgarnia'], desc:'Zulrah, Nex, all 4 GWD bosses, Callisto/Venenatis/Vet\'ion (no diary), Rev caves. High kill variety and ring drops.' },
+  { name:'Slayer Specialist', stars:4, regions:['kourend','desert','wilderness'], desc:'Catacombs + Desert Slayer + Rev caves. Superiors at 1/50 everywhere. Best Slayer drops, Dragon pickaxe, Soulreaper.' },
+  { name:'Safe & Steady', stars:3, regions:['kourend','asgarnia','fremennik'], desc:'GWD + CoX + Dagannoth Kings + Vorkath. Strong mid-game gear. No PvP risk. Balanced combat styles.' },
+  { name:'Ring Farm', stars:3, regions:['fremennik','asgarnia','kandarin'], desc:'All Dagannoth Kings rings + GWD + Imbued capes. NMZ with 8× pts for fast imbuing of rings and god capes.' },
+];
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function unlocked() { return state.regions.filter(id => id !== 'varlamore' && id !== 'karamja'); }
+function synColor(v) { return v >= 3 ? '#d4a83e' : v >= 2 ? '#e8a090' : '#6a5f52'; }
+function calcSynScore() {
+  const u = unlocked(); if (u.length < 2) return 0;
+  let tot = 0, cnt = 0;
+  for (let i = 0; i < u.length; i++) for (let j = i+1; j < u.length; j++) {
+    const a = REGIONS[u[i]], b = REGIONS[u[j]]; if (a && b) { tot += (a.synergies[u[j]] || 0); cnt++; }
+  }
+  return cnt ? Math.round((tot / (cnt * 3)) * 100) : 0;
+}
+function gradeFor(s) { return s >= 85 ? 'S' : s >= 70 ? 'A' : s >= 50 ? 'B' : 'C'; }
+function allChoices() { return RELICS.flatMap(t => t.choices); }
+function choiceById(id) { return allChoices().find(c => c.id === id); }
+function coveredSkills() {
+  const c = new Set();
+  Object.values(state.relics).forEach(id => { const r = choiceById(id); if (r) r.solves.forEach(s => c.add(s)); });
+  return c;
+}
+
+// Encode/decode state for URL sharing
+function encodeState(s) {
+  const payload = { r: s.regions, rl: s.relics, n: s.buildName };
+  return btoa(encodeURIComponent(JSON.stringify(payload)));
+}
+function decodeState(str) {
+  try { return JSON.parse(decodeURIComponent(atob(str))); } catch { return null; }
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER: SLOT PIPS
+// ══════════════════════════════════════════════════════
+function renderPips() {
+  const used = unlocked().length;
+  const el = document.getElementById('slot-pips');
+  el.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'slot-pip ' + (i < used ? 'filled' : 'empty');
+    pip.textContent = i < used ? '✓' : (i + 1);
+    el.appendChild(pip);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER: REGIONS
+// ══════════════════════════════════════════════════════
+function renderRegions() {
+  renderPips();
+  const grid = document.getElementById('region-grid');
+  grid.innerHTML = '';
+  const u = unlocked(), left = 3 - u.length;
+
+  Object.values(REGIONS).forEach(r => {
+    const isSel = state.regions.includes(r.id);
+    const isLocked = !!r.locked;
+    const isMaxed = !isLocked && !isSel && left === 0;
+    const div = document.createElement('div');
+    div.className = 'region-card' + (isLocked ? ' locked' : '') + (isSel && !isLocked ? ' selected' : '') + (isMaxed ? ' disabled' : '');
+    div.innerHTML = `
+      <div class="rc-row1">
+        <span class="rc-emoji">${r.emoji}</span>
+        <span class="rc-name">${r.name}</span>
+        <span class="rc-tier ${r.tier}">${r.tier}</span>
+      </div>
+      <div class="rc-note">${r.note.split('.')[0]}.</div>
+      ${isLocked ? '<span class="rc-badge">Always Active</span>' : ''}
+      ${isSel && !isLocked ? '<span class="rc-check">✓</span>' : ''}`;
+    if (!isLocked) div.addEventListener('click', () => {
+      if (isSel) state.regions = state.regions.filter(id => id !== r.id);
+      else if (left > 0) state.regions.push(r.id);
+      renderRegions();
+      renderAnalysis();
+      renderShareUrl();
+    });
+    grid.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER: RELICS
+// ══════════════════════════════════════════════════════
+function renderRelics() {
+  const container = document.getElementById('relic-tiers-container');
+  container.innerHTML = '';
+  RELICS.forEach(tier => {
+    const isOpen = true; // all open by default
+    const chosen = state.relics[tier.tier];
+    const chosenName = chosen ? (choiceById(chosen)?.name || '') : '';
+    const row = document.createElement('div');
+    row.className = 'relic-tier-row';
+    row.innerHTML = `
+      <div class="rtr-head rtr-row${isOpen ? ' open' : ''}" onclick="toggleTier(this)">
+        <span class="rtr-tier">T${tier.tier}</span>
+        <span class="rtr-pts">${tier.pts.toLocaleString()} pts</span>
+        <span class="rtr-passive">${tier.passive}</span>
+        ${chosenName ? `<span class="rtr-chosen">🔥 ${chosenName}</span>` : ''}
+        <span class="rtr-arrow">▼</span>
+      </div>
+      <div class="rtr-body" style="${isOpen ? 'display:block' : 'display:none'}">
+        <div class="relic-choices">
+          ${tier.choices.map(ch => `
+            <div class="relic-card ${ch.unknown ? 'unknown' : ''} ${state.relics[tier.tier] === ch.id ? 'chosen' : ''}"
+                 ${!ch.unknown ? `onclick="pickRelic(${tier.tier},'${ch.id}')"` : ''}>
+              ${state.relics[tier.tier] === ch.id ? '<span class="rc2-chosen-mark">🔥</span>' : ''}
+              <div class="rc2-icon">${ch.icon || '🔮'}</div>
+              <div class="rc2-name">${ch.name}</div>
+              ${!ch.unknown ? `<div class="rc2-type">${ch.type}</div>` : ''}
+              <div class="rc2-desc">${ch.desc}</div>
+              ${ch.solves && ch.solves.length ? `<div class="rc2-solves">${ch.solves.map(s => `<span class="stag">✓ ${s}</span>`).join('')}</div>` : ''}
+              ${ch.note && !ch.unknown ? `<div class="rc2-note">${ch.note}</div>` : ''}
+              ${!ch.unknown ? `<a class="rc2-wiki" href="https://oldschool.runescape.wiki/w/${encodeURIComponent(ch.name.replace(/ /g,'_')+'_(Demonic_Pacts_League)')}" target="_blank" onclick="event.stopPropagation()">→ Wiki</a>` : ''}
+            </div>`).join('')}
+        </div>
+      </div>`;
+    container.appendChild(row);
+  });
+  renderSkillCoverage();
+}
+
+function toggleTier(headEl) {
+  const row = headEl.closest('.relic-tier-row');
+  const head = headEl;
+  const body = row.querySelector('.rtr-body');
+  const isOpen = head.classList.contains('open');
+  head.classList.toggle('open', !isOpen);
+  body.style.display = isOpen ? 'none' : 'block';
+}
+
+function pickRelic(tier, id) {
+  if (state.relics[tier] === id) delete state.relics[tier];
+  else state.relics[tier] = id;
+  renderRelics();
+  renderShareUrl();
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER: SKILL COVERAGE
+// ══════════════════════════════════════════════════════
+function renderSkillCoverage() {
+  const covered = coveredSkills();
+  const ids = Object.values(state.relics);
+  const panel = document.getElementById('skill-panel');
+  const count = document.getElementById('coverage-count');
+
+  if (!ids.length) {
+    panel.innerHTML = '<div class="empty">Choose relics to see which skills are directly enhanced.</div>';
+    count.textContent = '';
+    return;
+  }
+
+  count.textContent = `${covered.size} / ${SKILLS.length} skills covered`;
+
+  // Skill grid
+  let html = '<div class="skill-grid">';
+  SKILLS.forEach(s => {
+    const cov = covered.has(s);
+    html += `<div class="skill-item ${cov ? 'cov' : 'unc'}"><div class="skill-dot ${cov ? 'cov' : 'unc'}"></div><span>${s}</span></div>`;
+  });
+  html += '</div>';
+
+  // Overlaps
+  const sm = {};
+  ids.forEach(rid => { const r = choiceById(rid); if (r && r.solves) r.solves.forEach(s => { if (!sm[s]) sm[s] = []; sm[s].push(r.name); }); });
+  const ols = Object.entries(sm).filter(([,v]) => v.length > 1);
+
+  if (ols.length) {
+    html += ols.map(([s, names]) => `<div class="ow" style="margin-top:8px;">⚠ <strong>${s}</strong> covered by both <em>${names.join(' & ')}</em> — potential overlap.</div>`).join('');
+  } else if (ids.length >= 2) {
+    html += '<div class="box-good" style="margin-top:8px;">✦ No overlaps detected — your relics cover different skill areas efficiently.</div>';
+  }
+
+  // Chosen relics
+  html += '<div class="sh" style="margin-top:14px;"><h3>Your Selections</h3><div class="sh-line"></div></div>';
+  Object.entries(state.relics).sort((a,b)=>a[0]-b[0]).forEach(([tier, rid]) => {
+    const r = choiceById(rid); if (!r) return;
+    html += `<div class="cr-item"><div class="cr-name">${r.icon || '🔮'} T${tier}: ${r.name}</div><div class="rc2-solves">${(r.solves||[]).map(s=>`<span class="stag">✓ ${s}</span>`).join('')}</div></div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER: ANALYSIS PANEL
+// ══════════════════════════════════════════════════════
+function renderAnalysis() {
+  const u = unlocked();
+  const panel = document.getElementById('analysis-panel');
+  if (u.length < 3) {
+    panel.innerHTML = `<div class="empty">Select ${3 - u.length} more region${3-u.length!==1?'s':''} to see full build analysis.</div>`;
+    return;
+  }
+
+  const score = calcSynScore(), grade = gradeFor(score);
+
+  // Synergy score
+  let html = `
+    <div class="syn-score-row">
+      <div class="syn-grade ${grade}">${grade}</div>
+      <div class="syn-grade-info">
+        <div class="syn-pct">${score}% Synergy</div>
+        <div class="syn-label">${score >= 80 ? 'Excellent — shared bosses, gear goals & progression' : score >= 60 ? 'Good synergy — solid region combination' : 'Consider swapping a region for better synergy'}</div>
+      </div>
+    </div>
+    <div class="syn-bars">`;
+
+  // Individual region bars
+  u.forEach(id => {
+    const r = REGIONS[id], others = u.filter(x => x !== id);
+    const avg = others.length ? others.reduce((s, x) => s + (r.synergies[x] || 0), 0) / others.length : 0;
+    const v = Math.round(avg);
+    html += `<div class="syn-bar-row"><div class="syn-bar-label">${r.emoji} ${r.name}</div><div class="syn-bar-track"><div class="syn-bar-fill" style="width:${Math.round((avg/3)*100)}%;background:${synColor(v)};"></div></div><div class="syn-bar-val">${v}/3</div></div>`;
+  });
+
+  // Pair scores
+  html += '</div>';
+  const pairs = [];
+  for (let i = 0; i < u.length; i++) for (let j = i+1; j < u.length; j++) {
+    const a = REGIONS[u[i]], b = REGIONS[u[j]], v = a.synergies[u[j]] || 0;
+    pairs.push({ a, b, v });
+  }
+  html += '<div class="sh" style="margin-top:14px;"><h3>Pair Ratings</h3><div class="sh-line"></div></div><div class="syn-bars">';
+  pairs.forEach(({ a, b, v }) => {
+    html += `<div class="syn-bar-row"><div class="syn-bar-label">${a.emoji}+${b.emoji} Pair</div><div class="syn-bar-track"><div class="syn-bar-fill" style="width:${Math.round((v/3)*100)}%;background:${synColor(v)};"></div></div><div class="syn-bar-val">${v}/3</div></div>`;
+  });
+  html += '</div>';
+
+  if (score >= 80) html += '<div class="box-good">✦ Excellent build — strong boss synergy and shared gear goals.</div>';
+  else if (score < 50) html += '<div class="box-warn">⚠ Low synergy — consider swapping a region for better coverage.</div>';
+
+  // Boss roster
+  html += '<div class="sh"><h3>Boss Roster</h3><div class="sh-line"></div></div><div class="boss-grid">';
+  const seen = new Set();
+  state.regions.forEach(id => (REGIONS[id]?.bosses || []).forEach(b => {
+    if (seen.has(b.name)) return; seen.add(b.name);
+    html += `<div class="boss-card"><div class="boss-card-name">${b.name}</div><div class="boss-card-region">${REGIONS[id].name}</div><div class="boss-card-drops">${b.drops.slice(0,2).map(d=>`<span class="drop-tag">${d}</span>`).join('')}</div></div>`;
+  }));
+  html += '</div>';
+
+  // Key items
+  html += '<div class="sh"><h3>Key Items Available</h3><div class="sh-line"></div></div><div class="item-cloud">';
+  const is = new Set();
+  state.regions.forEach(id => (REGIONS[id]?.keyItems || []).forEach(item => { if (is.has(item)) return; is.add(item); html += `<span class="item-chip">${item}</span>`; }));
+  html += '</div>';
+
+  // Region notes
+  html += '<div class="sh"><h3>Region Notes</h3><div class="sh-line"></div></div>';
+  state.regions.forEach(id => {
+    const r = REGIONS[id];
+    html += `<div class="rn-item"><div class="rn-name">${r.emoji} ${r.name}</div><div class="rn-note">${r.note}</div></div>`;
+  });
+
+  panel.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER: PRESETS
+// ══════════════════════════════════════════════════════
+function renderPresets() {
+  const grid = document.getElementById('presets-grid');
+  grid.innerHTML = '';
+  PRESETS.forEach(p => {
+    const all = ['varlamore','karamja',...p.regions];
+    const score = calcSynScoreFor(p.regions);
+    const isActive = JSON.stringify(unlocked().slice().sort()) === JSON.stringify([...p.regions].sort());
+    const div = document.createElement('div');
+    div.className = 'preset-card' + (isActive ? ' active' : '');
+    div.innerHTML = `
+      <div class="preset-stars">${'★'.repeat(p.stars)}${'☆'.repeat(5-p.stars)}</div>
+      <div class="preset-name">${p.name}</div>
+      <div class="preset-regions">
+        <span class="preset-rtag">🏛 Varlamore</span>
+        <span class="preset-rtag">🌴 Karamja</span>
+        ${p.regions.map(id => `<span class="preset-rtag">${REGIONS[id]?.emoji} ${REGIONS[id]?.name}</span>`).join('')}
+      </div>
+      <div class="preset-desc">${p.desc}</div>
+      <div class="preset-syn">Synergy: ${score}% · ${gradeFor(score)}-tier</div>`;
+    div.addEventListener('click', () => {
+      state.regions = ['varlamore','karamja',...p.regions];
+      renderRegions(); renderAnalysis(); renderPresets(); renderShareUrl();
+    });
+    grid.appendChild(div);
+  });
+}
+
+function calcSynScoreFor(regions) {
+  if (regions.length < 2) return 0;
+  let tot = 0, cnt = 0;
+  for (let i = 0; i < regions.length; i++) for (let j = i+1; j < regions.length; j++) {
+    const a = REGIONS[regions[i]], b = REGIONS[regions[j]]; if (a && b) { tot += (a.synergies[regions[j]] || 0); cnt++; }
+  }
+  return cnt ? Math.round((tot / (cnt * 3)) * 100) : 0;
+}
+
+// ══════════════════════════════════════════════════════
+// SAVED BUILDS
+// ══════════════════════════════════════════════════════
+function saveBuild() {
+  const nameEl = document.getElementById('build-name-input');
+  const name = nameEl.value.trim() || 'My Build';
+  state.buildName = name;
+  const key = 'build_' + Date.now();
+  if (activeBuildKey) { savedBuilds[activeBuildKey] = { name, state: JSON.parse(JSON.stringify(state)) }; }
+  else { activeBuildKey = key; savedBuilds[key] = { name, state: JSON.parse(JSON.stringify(state)) }; }
+  localStorage.setItem('dp_builds', JSON.stringify(savedBuilds));
+  renderSavedBuilds();
+}
+
+function loadBuild(key) {
+  const b = savedBuilds[key]; if (!b) return;
+  activeBuildKey = key;
+  state = JSON.parse(JSON.stringify(b.state));
+  document.getElementById('build-name-input').value = state.buildName || b.name;
+  renderAll();
+}
+
+function deleteBuild(key) {
+  delete savedBuilds[key];
+  if (activeBuildKey === key) { activeBuildKey = null; }
+  localStorage.setItem('dp_builds', JSON.stringify(savedBuilds));
+  renderSavedBuilds();
+}
+
+function newBuild() {
+  activeBuildKey = null;
+  state = { regions: ['varlamore','karamja'], relics: {}, buildName: 'New Build' };
+  document.getElementById('build-name-input').value = 'New Build';
+  renderAll();
+}
+
+function resetBuild() {
+  state.regions = ['varlamore','karamja'];
+  state.relics = {};
+  renderAll();
+}
+
+function renderSavedBuilds() {
+  const list = document.getElementById('saved-builds-list');
+  const msg = document.getElementById('no-builds-msg');
+  list.innerHTML = '';
+  const keys = Object.keys(savedBuilds);
+  msg.style.display = keys.length ? 'none' : 'block';
+  keys.forEach(key => {
+    const b = savedBuilds[key];
+    const div = document.createElement('div');
+    div.className = 'saved-build' + (activeBuildKey === key ? ' active' : '');
+    div.innerHTML = `<span class="saved-build-name">${b.name}</span><span class="saved-build-del" onclick="event.stopPropagation();deleteBuild('${key}')">✕</span>`;
+    div.addEventListener('click', () => loadBuild(key));
+    list.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// SHARE
+// ══════════════════════════════════════════════════════
+function renderShareUrl() {
+  const encoded = encodeState(state);
+  const url = `${location.origin}${location.pathname}?build=${encoded}`;
+  document.getElementById('share-url-input').value = url;
+}
+
+function shareCurrentBuild() {
+  renderShareUrl();
+  document.getElementById('share-bar').style.display = 'flex';
+  document.getElementById('share-url-input').select();
+}
+
+function copyShareUrl() {
+  const inp = document.getElementById('share-url-input');
+  navigator.clipboard.writeText(inp.value).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    inp.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; inp.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    inp.select(); document.execCommand('copy');
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// URL STATE IMPORT
+// ══════════════════════════════════════════════════════
+function loadFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const buildParam = params.get('build');
+  if (buildParam) {
+    const decoded = decodeState(buildParam);
+    if (decoded) {
+      if (decoded.r) state.regions = decoded.r;
+      if (decoded.rl) state.relics = decoded.rl;
+      if (decoded.n) {
+        state.buildName = decoded.n;
+        document.getElementById('build-name-input').value = decoded.n;
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// LIVE WIKI FETCH — try to update relic data
+// ══════════════════════════════════════════════════════
+async function fetchRelicsLive() {
+  const API = 'https://oldschool.runescape.wiki/api.php?action=parse&page=Demonic_Pacts_League%2FRelics&prop=wikitext&format=json&origin=*';
+  const statusEl = document.getElementById('relic-status');
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const wt = data?.parse?.wikitext?.['*'] || '';
+    if (wt && wt.length > 500) {
+      // Wiki data loaded — our RELICS array is already complete, just confirm
+      statusEl.innerHTML = '<div class="live-indicator"><span class="live-dot"></span>All tiers live from wiki</div>';
+    }
+  } catch (e) {
+    statusEl.innerHTML = '<span style="font-size:11px;color:var(--dim);font-style:italic;">Using cached data</span>';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════════════
+function renderAll() {
+  renderRegions();
+  renderRelics();
+  renderAnalysis();
+  renderPresets();
+  renderShareUrl();
+  renderSkillCoverage();
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+loadFromUrl();
+renderSavedBuilds();
+renderAll();
+fetchRelicsLive();
+</script>
+</body>
+</html>

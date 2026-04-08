@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Demonic Pacts League planner — region synergy, relic picker, live updates from OSRS Wiki">
+<title>Demonic Pacts League Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;font-size:17px;}
+:root{
+  --bg:#0c0c0c;--surface:#161616;--surface2:#1f1f1f;--surface3:#252525;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --gold:#c9a84c;--gold-light:#f0d080;--gold-dim:rgba(201,168,76,0.12);--gold-mid:rgba(201,168,76,0.25);
+  --ember:#e05a3a;--ember-dim:rgba(224,90,58,0.1);
+  --green:#27ae60;--green-dim:rgba(39,174,96,0.1);--green-mid:rgba(39,174,96,0.22);
+  --blue-dim:rgba(41,128,185,0.1);
+  --bone:#d4c5a9;--dim:#6a5f52;--muted:#9a8a78;
+  --sidebar-w:260px;
+}
+body{background:var(--bg);color:var(--bone);font-family:'Crimson Pro',Georgia,serif;font-size:1rem;line-height:1.65;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 10% 5%,rgba(139,0,0,0.09) 0%,transparent 50%),radial-gradient(ellipse at 90% 95%,rgba(201,168,76,0.04) 0%,transparent 50%);}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.2);border-radius:3px;}
+
+/* LAYOUT */
+.layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+.sb-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border);}
+.sb-title{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--gold-light);line-height:1.2;}
+.sb-sub{font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-top:5px;}
+.sb-cd{margin:14px 16px;background:rgba(139,0,0,0.12);border:1px solid rgba(192,57,43,0.2);padding:12px 14px;text-align:center;}
+.sb-cd-lbl{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;}
+.sb-cd-row{display:flex;justify-content:center;gap:2px;font-family:'Cinzel',serif;}
+.sb-cd-u{display:flex;flex-direction:column;align-items:center;min-width:38px;}
+.sb-cd-n{font-size:24px;font-weight:700;color:var(--ember);line-height:1;}
+.sb-cd-l{font-size:8px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;}
+.sb-cd-sep{font-size:20px;color:var(--dim);margin-top:2px;}
+.sb-nav{flex:1;padding:8px 0;}
+.ni{display:flex;align-items:center;gap:11px;padding:12px 20px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);border-left:2px solid transparent;transition:all 0.18s;user-select:none;}
+.ni:hover{color:var(--bone);background:rgba(255,255,255,0.03);}
+.ni.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-dim);}
+.ni-icon{font-size:16px;flex-shrink:0;}
+.sb-foot{padding:14px 16px;border-top:1px solid var(--border);}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;color:#7fe0a0;text-transform:uppercase;}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+/* MAIN — fills all available width */
+.main{flex:1;margin-left:var(--sidebar-w);min-height:100vh;width:calc(100% - var(--sidebar-w));}
+.page-wrap{width:100%;max-width:1100px;padding:32px 36px 80px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* MOBILE HEADER */
+.mob-hdr{display:none;position:sticky;top:0;background:rgba(12,12,12,0.97);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);z-index:200;padding:0 16px;align-items:center;gap:12px;height:60px;}
+.mob-title{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--gold-light);flex:1;}
+.mob-cd{font-family:'Cinzel',serif;font-size:12px;color:var(--ember);white-space:nowrap;}
+.hamburger{font-size:22px;cursor:pointer;color:var(--gold);flex-shrink:0;}
+
+/* MOBILE DRAWER */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;backdrop-filter:blur(4px);}
+.mob-overlay.open{display:block;}
+.mob-drawer{position:absolute;left:0;top:0;bottom:0;width:260px;background:var(--surface);border-right:1px solid var(--border);padding:22px 0;overflow-y:auto;transform:translateX(-100%);transition:transform 0.3s ease;}
+.mob-overlay.open .mob-drawer{transform:translateX(0);}
+.mob-close{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--dim);padding:0 20px 16px;text-transform:uppercase;cursor:pointer;}
+
+/* BOTTOM NAV */
+.bnav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(12,12,12,0.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);z-index:200;grid-template-columns:repeat(5,1fr);}
+.bn{display:flex;flex-direction:column;align-items:center;padding:9px 4px 11px;cursor:pointer;gap:3px;background:none;border:none;color:var(--dim);transition:color 0.15s;}
+.bn.active{color:var(--gold);}
+.bn-i{font-size:18px;line-height:1;}
+.bn-l{font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;text-transform:uppercase;}
+
+/* SECTION HEADERS */
+.sh{display:flex;align-items:center;gap:12px;margin:28px 0 16px;}
+.sh:first-child{margin-top:0;}
+.sh h2{font-family:'Cinzel',serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);white-space:nowrap;}
+.sh-line{flex:1;height:1px;background:linear-gradient(to right,rgba(201,168,76,0.3),transparent);}
+
+/* WIKI STATUS */
+.wiki-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);padding:10px 14px;margin-bottom:16px;}
+.wiki-loading{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);font-style:italic;}
+.spinner{width:14px;height:14px;border:2px solid rgba(201,168,76,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.wiki-ok{display:none;align-items:center;gap:7px;font-size:14px;color:#7fe0a0;}
+.wiki-err{display:none;font-size:14px;color:#e8a090;font-style:italic;}
+.wiki-ts{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--dim);margin-left:auto;}
+
+/* FACTS */
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px;}
+.fact{background:var(--surface);border:1px solid var(--border);border-left:2px solid var(--gold);padding:10px 13px;}
+.fl{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:4px;}
+.fv{font-size:15px;color:var(--bone);font-weight:600;}
+.fv em{color:var(--gold-light);font-style:normal;}
+
+/* ACCORDION */
+.ac{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);margin-bottom:8px;overflow:hidden;}
+.ac.ember{border-left-color:var(--ember);background:var(--ember-dim);}
+.ac.tbd{border-left-color:rgba(255,255,255,0.08);opacity:0.5;}
+.ac-h{display:flex;align-items:center;gap:10px;padding:12px 15px;cursor:pointer;user-select:none;}
+.ac-date{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;color:var(--gold);flex-shrink:0;width:60px;}
+.ac.ember .ac-date{color:var(--ember);}
+.ac.tbd .ac-date{color:var(--dim);}
+.ac-title{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--bone);flex:1;}
+.ac.tbd .ac-title{color:var(--dim);font-style:italic;}
+.ac-badge{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:3px 9px;flex-shrink:0;}
+.bg{background:var(--gold-dim);border:1px solid var(--gold-mid);color:var(--gold);}
+.be{background:var(--ember-dim);border:1px solid rgba(224,90,58,0.3);color:#e8a090;}
+.bd-{background:rgba(255,255,255,0.02);border:1px solid var(--border);color:var(--dim);}
+.ac-arr{color:var(--dim);font-size:11px;flex-shrink:0;transition:transform 0.25s;}
+.ac.open .ac-arr{transform:rotate(180deg);}
+.ac-b{max-height:0;overflow:hidden;transition:max-height 0.35s ease;}
+.ac.open .ac-b{max-height:1000px;}
+.ac-c{padding:0 15px 15px;border-top:1px solid rgba(255,255,255,0.05);}
+
+/* TAGS */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.tag{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.5px;padding:4px 10px;border:1px solid;}
+.tg{color:var(--gold-light);border-color:var(--gold-mid);background:var(--gold-dim);}
+.tr{color:#e8a090;border-color:rgba(192,57,43,0.3);background:rgba(139,0,0,0.15);}
+.tgr{color:#7fe0a0;border-color:rgba(39,174,96,0.3);background:var(--green-dim);}
+.tb{color:#90b8d8;border-color:rgba(41,128,185,0.25);background:var(--blue-dim);}
+.td{color:var(--dim);border-color:var(--border);background:rgba(255,255,255,0.02);}
+.notice{background:var(--gold-dim);border:1px solid var(--gold-mid);padding:12px 15px;font-size:15px;color:var(--gold-light);margin-bottom:14px;font-style:italic;}
+
+/* WIKI REVEALS */
+.wri{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);padding:14px 16px;margin-bottom:9px;}
+.wri-date{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:5px;}
+.wri-title{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--bone);margin-bottom:7px;}
+.wri-links{display:flex;flex-wrap:wrap;gap:6px;}
+.wrl{font-size:12px;background:var(--gold-dim);border:1px solid var(--gold-mid);color:var(--gold-light);padding:3px 10px;text-decoration:none;transition:background 0.15s;}
+.wrl:hover{background:rgba(201,168,76,0.22);}
+
+/* REGION PLANNER */
+.slot-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;background:var(--surface);border:1px solid var(--border);padding:11px 15px;margin-bottom:14px;}
+.slot-lbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;}
+.slot-pips{display:flex;gap:7px;}
+.pip{width:26px;height:26px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:11px;transition:all 0.2s;}
+.pip.used{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);}
+.pip.free{background:transparent;border-color:var(--dim);color:var(--dim);}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+.rcard{background:var(--surface);border:1px solid var(--border);border-left:3px solid transparent;padding:14px 15px;cursor:pointer;transition:all 0.18s;}
+.rcard:hover:not(.rl):not(.rm){background:var(--surface2);border-color:rgba(201,168,76,0.2);transform:translateY(-1px);}
+.rl{border-left-color:var(--gold);cursor:default;}
+.rc{border-left-color:var(--green);background:var(--green-dim);border-color:rgba(39,174,96,0.22);}
+.rm{opacity:0.35;pointer-events:none;}
+.rc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;}
+.rc-em{font-size:20px;flex-shrink:0;}
+.rc-nm{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--bone);flex:1;}
+.tier-badge-sm{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:2px 7px;border:1px solid;flex-shrink:0;}
+.tS{background:var(--gold-dim);border-color:var(--gold-mid);color:var(--gold);}
+.tA{background:rgba(224,90,58,0.1);border-color:rgba(224,90,58,0.3);color:#e8a090;}
+.tB{background:rgba(41,128,185,0.1);border-color:rgba(41,128,185,0.25);color:#90b8d8;}
+/* "Always Active" tag — inline below the name row, no overlap */
+.rc-lt{display:inline-block;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;background:var(--gold-dim);border:1px solid var(--gold-mid);color:var(--gold);padding:2px 7px;margin-bottom:6px;}
+/* Checkmark for chosen — inline after title row */
+.rc-ck{font-size:14px;color:var(--green);margin-left:auto;flex-shrink:0;}
+.rc-note{font-size:13px;color:var(--dim);font-style:italic;line-height:1.45;}
+
+/* ANALYSIS */
+.agrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.apanel{background:var(--surface);border:1px solid var(--border);padding:18px 20px;}
+.ap-lbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2.5px;color:var(--gold);text-transform:uppercase;margin-bottom:13px;}
+.syn-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.syn-lbl{font-size:14px;color:var(--bone);width:115px;flex-shrink:0;}
+.syn-track{flex:1;height:6px;background:rgba(255,255,255,0.06);}
+.syn-fill{height:100%;transition:width 0.6s ease;}
+.syn-val{font-size:12px;color:var(--dim);width:26px;text-align:right;flex-shrink:0;}
+.grade-box{text-align:center;padding:12px 0 6px;}
+.grade-n{font-family:'Cinzel',serif;font-size:56px;line-height:1;}
+.gS{color:var(--gold-light);text-shadow:0 0 22px rgba(201,168,76,0.5);}
+.gA{color:#e8a090;}
+.gB{color:#90b8d8;}
+.gC{color:var(--dim);}
+.grade-l{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+.fb-good{background:var(--green-dim);border:1px solid rgba(39,174,96,0.25);padding:10px 13px;font-size:14px;color:#7fe0a0;margin-top:10px;}
+.fb-warn{background:var(--ember-dim);border:1px solid rgba(224,90,58,0.25);padding:10px 13px;font-size:14px;color:#e8a090;margin-top:10px;}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-top:4px;}
+.bc{background:var(--surface2);border:1px solid var(--border);padding:11px 13px;}
+.bc-name{font-family:'Cinzel',serif;font-size:12px;color:var(--gold-light);margin-bottom:3px;}
+.bc-region{font-size:11px;color:var(--dim);margin-bottom:5px;}
+.bc-drops{display:flex;flex-wrap:wrap;gap:4px;}
+.dtag{font-size:11px;background:var(--gold-dim);border:1px solid rgba(201,168,76,0.15);color:var(--bone);padding:2px 7px;opacity:0.85;}
+.icloud{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.ichip{font-size:13px;background:var(--gold-dim);border:1px solid var(--gold-mid);color:var(--gold-light);padding:3px 10px;}
+
+/* RELIC PLANNER */
+.tb-block{margin-bottom:10px;border:1px solid var(--border);overflow:hidden;}
+.tb-head{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 15px;background:var(--surface2);}
+.tb-badge{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-mid);padding:4px 11px;white-space:nowrap;flex-shrink:0;}
+.tb-pts{font-family:'Cinzel',serif;font-size:10px;color:var(--dim);white-space:nowrap;flex-shrink:0;}
+.tb-passive{font-size:13px;color:var(--dim);font-style:italic;flex:1;min-width:100px;}
+.tb-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1px;background:var(--border);}
+.rch{background:var(--surface);padding:15px 17px;cursor:pointer;transition:all 0.18s;position:relative;}
+.rch:hover:not(.runk){background:var(--surface2);}
+.rch.chosen{background:rgba(139,0,0,0.15);border-top:2px solid var(--ember);}
+.runk{cursor:default;opacity:0.45;}
+.rch-icon{font-size:23px;margin-bottom:6px;}
+.rch-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--gold-light);margin-bottom:4px;}
+.rch-type{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ember);margin-bottom:6px;}
+.rch-desc{font-size:14px;color:var(--bone);line-height:1.55;margin-bottom:8px;}
+.rch-solves{display:flex;flex-wrap:wrap;gap:4px;}
+.stag{font-size:11px;background:var(--green-dim);border:1px solid rgba(39,174,96,0.25);color:#7fe0a0;padding:3px 8px;}
+.chosen-fire{position:absolute;top:9px;right:11px;font-size:16px;}
+.rch-note{font-size:12.5px;color:var(--dim);font-style:italic;margin-top:7px;line-height:1.5;}
+
+/* RELIC ANALYSIS */
+.ra-panel{background:var(--surface);border:1px solid var(--border);padding:19px 21px;margin-top:16px;}
+.skill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:6px;}
+.ski{display:flex;align-items:center;gap:7px;font-size:13.5px;padding:6px 9px;background:rgba(255,255,255,0.02);border:1px solid transparent;}
+.ski.cov{border-color:rgba(39,174,96,0.2);background:var(--green-dim);color:#7fe0a0;}
+.ski.unc{color:var(--dim);}
+.skdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.skdot.cov{background:var(--green);}
+.skdot.unc{background:rgba(255,255,255,0.1);}
+.ow{background:var(--ember-dim);border:1px solid rgba(224,90,58,0.25);padding:10px 13px;margin-top:7px;font-size:14px;color:#e8c0a8;}
+.ow strong{color:var(--ember);}
+.crl{margin-top:14px;}
+.cr-item{background:rgba(139,0,0,0.1);border-left:2px solid var(--ember);padding:10px 13px;margin-bottom:7px;}
+.cr-name{font-family:'Cinzel',serif;font-size:12px;color:var(--gold-light);margin-bottom:5px;}
+
+/* PACTS */
+.pact{background:var(--surface);border:1px solid var(--border);padding:14px 17px;margin-bottom:9px;display:flex;gap:14px;align-items:flex-start;}
+.p-icon{font-size:23px;flex-shrink:0;}
+.p-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--gold-light);margin-bottom:4px;}
+.p-desc{font-size:15px;color:var(--bone);opacity:0.9;}
+.echo{background:var(--surface);border:1px solid var(--border);border-left:2px solid var(--ember);padding:14px 17px;margin-bottom:9px;}
+.echo-title{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:#e8a090;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.echo-reg{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;background:var(--ember-dim);border:1px solid rgba(224,90,58,0.25);color:var(--ember);padding:2px 7px;}
+.echo-desc{font-size:14px;color:var(--bone);opacity:0.85;}
+
+/* LINKS */
+.lrow{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--border);padding:14px 17px;text-decoration:none;color:var(--bone);margin-bottom:9px;transition:all 0.18s;}
+.lrow:hover{background:var(--surface2);border-color:rgba(201,168,76,0.2);}
+.l-icon{font-size:21px;flex-shrink:0;}
+.l-name{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--gold-light);margin-bottom:3px;}
+.l-desc{font-size:13px;color:var(--dim);}
+.l-arr{color:var(--gold);font-size:15px;margin-left:auto;flex-shrink:0;}
+.tbd-list{background:var(--surface);border:1px solid var(--border);padding:15px 17px;}
+.tbd-item{font-size:14px;color:var(--bone);padding:6px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;}
+.tbd-item:last-child{border-bottom:none;}
+.footer{text-align:center;font-size:13px;color:var(--dim);font-style:italic;margin-top:40px;padding-top:16px;border-top:1px solid var(--border);}
+.footer a{color:var(--gold);text-decoration:none;opacity:0.7;}
+.ndot{display:inline-block;width:7px;height:7px;background:var(--ember);border-radius:50%;margin-left:3px;vertical-align:middle;animation:pulse 1.5s infinite;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .mob-hdr{display:flex;}
+  .bnav{display:grid;}
+  .main{margin-left:0;padding-bottom:58px;}
+  .page-wrap{padding:14px 13px 72px;}
+  .agrid{grid-template-columns:1fr;}
+  .tb-choices{grid-template-columns:1fr;}
+  .facts{grid-template-columns:1fr 1fr;}
+  .rgrid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:380px){
+  .rgrid{grid-template-columns:1fr;}
+  .facts{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- MOBILE HEADER -->
+<div class="mob-hdr">
+  <span class="hamburger" onclick="openDrawer()">☰</span>
+  <span class="mob-title">Demonic Pacts</span>
+  <span class="mob-cd" id="mob-cd">--d --h</span>
+</div>
+
+<!-- MOBILE DRAWER -->
+<div class="mob-overlay" id="mob-overlay" onclick="closeDrawer()">
+  <div class="mob-drawer" onclick="event.stopPropagation()">
+    <div class="mob-close" onclick="closeDrawer()">✕ Close</div>
+    <div id="mob-nav"></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav" id="bnav">
+  <button class="bn active" onclick="goPage('updates')" id="bn-updates"><span class="bn-i">📰</span><span class="bn-l">Updates</span></button>
+  <button class="bn" onclick="goPage('regions')" id="bn-regions"><span class="bn-i">🗺</span><span class="bn-l">Regions</span></button>
+  <button class="bn" onclick="goPage('relics')" id="bn-relics"><span class="bn-i">💎</span><span class="bn-l">Relics</span></button>
+  <button class="bn" onclick="goPage('pacts')" id="bn-pacts"><span class="bn-i">☠</span><span class="bn-l">Pacts</span></button>
+  <button class="bn" onclick="goPage('links')" id="bn-links"><span class="bn-i">🔗</span><span class="bn-l">Links</span></button>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-title">Demonic Pacts<br>League Planner</div>
+      <div class="sb-sub">Leagues VI · OSRS · Apr 15</div>
+    </div>
+    <div class="sb-cd">
+      <div class="sb-cd-lbl">Time Until Launch</div>
+      <div class="sb-cd-row">
+        <div class="sb-cd-u"><span class="sb-cd-n" id="sb-d">--</span><span class="sb-cd-l">days</span></div>
+        <div class="sb-cd-sep">:</div>
+        <div class="sb-cd-u"><span class="sb-cd-n" id="sb-h">--</span><span class="sb-cd-l">hrs</span></div>
+        <div class="sb-cd-sep">:</div>
+        <div class="sb-cd-u"><span class="sb-cd-n" id="sb-m">--</span><span class="sb-cd-l">min</span></div>
+        <div class="sb-cd-sep">:</div>
+        <div class="sb-cd-u"><span class="sb-cd-n" id="sb-s">--</span><span class="sb-cd-l">sec</span></div>
+      </div>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot"><div class="live-badge"><span class="live-dot"></span>Wiki data live</div></div>
+  </aside>
+
+  <main class="main">
+    <div class="page-wrap">
+
+      <!-- ══ UPDATES ══ -->
+      <div class="page active" id="page-updates">
+        <div class="wiki-bar">
+          <div class="wiki-loading" id="wl"><span class="spinner"></span>Fetching live data from OSRS Wiki...</div>
+          <div class="wiki-ok" id="wo">✓ Live data loaded from OSRS Wiki</div>
+          <div class="wiki-err" id="we">⚠ Could not reach wiki — showing cached data</div>
+          <span class="wiki-ts" id="wts"></span>
+        </div>
+        <div class="sh"><h2>⚡ Quick Facts</h2><div class="sh-line"></div></div>
+        <div class="facts">
+          <div class="fact"><div class="fl">Start Region</div><div class="fv"><em>Varlamore</em></div></div>
+          <div class="fact"><div class="fl">Free Unlock</div><div class="fv">Varlamore+<em>Karamja</em></div></div>
+          <div class="fact"><div class="fl">Unlockable</div><div class="fv">Choose <em>3 of 8</em></div></div>
+          <div class="fact"><div class="fl">Misthalin</div><div class="fv"><em>Locked</em> by Yama</div></div>
+          <div class="fact"><div class="fl">XP Rate</div><div class="fv"><em>5x</em> → 16x max</div></div>
+          <div class="fact"><div class="fl">Drop Rate</div><div class="fv"><em>2x</em> → 5x max</div></div>
+          <div class="fact"><div class="fl">Farming Ticks</div><div class="fv">Every <em>1 min</em></div></div>
+          <div class="fact"><div class="fl">Minigame Pts</div><div class="fv"><em>4x</em> → 8x max</div></div>
+          <div class="fact"><div class="fl">Zulrah</div><div class="fv"><em>No</em> damage cap</div></div>
+          <div class="fact"><div class="fl">Soulreaper</div><div class="fv">All pieces from <em>every DT2</em></div></div>
+          <div class="fact"><div class="fl">ToB/ToA</div><div class="fv"><em>Shared</em> group uniques</div></div>
+          <div class="fact"><div class="fl">Sailing</div><div class="fv"><em>Not</em> included</div></div>
+        </div>
+        <div class="sh"><h2>📅 Daily Reveals — Live from Wiki</h2><div class="sh-line"></div></div>
+        <div class="notice">Jagex drops a reveal every day until April 14. This section fetches live from the OSRS Wiki every time you open the page.</div>
+        <div id="live-reveals"></div>
+        <div class="sh"><h2>🔑 Confirmed Changes</h2><div class="sh-line"></div></div>
+        <div class="ac open" onclick="acc(this)">
+          <div class="ac-h"><div class="ac-date">Bosses</div><div class="ac-title">Boss &amp; Drop Changes</div><span class="ac-badge bg">CONFIRMED</span><span class="ac-arr">▼</span></div>
+          <div class="ac-b"><div class="ac-c"><div class="tags" style="margin-top:10px;">
+            <span class="tag tr">Zulrah: No damage cap</span><span class="tag tr">Zulrah: No melee immunity</span>
+            <span class="tag tg">All DT2 bosses drop all Soulreaper pieces</span>
+            <span class="tag tg">ToB/ToA: Shared uniques whole group</span>
+            <span class="tag tg">CoX CM: +25% dmg/def, +50% HP, 3× unique</span>
+            <span class="tag tg">ToB HM: +25% dmg/def, +50% HP, 2× unique</span>
+            <span class="tag tg">ToA: Max invoc raised to 1000</span>
+            <span class="tag tg">Tbow/Scythe/Tumeken's from all 3 raids</span>
+            <span class="tag tb">Wilderness bosses: No diary req</span>
+            <span class="tag tb">Nex: Increased Nihil shards</span>
+            <span class="tag tgr">Scythe: Blood runes only</span>
+          </div></div></div>
+        </div>
+        <div class="ac" onclick="acc(this)">
+          <div class="ac-h"><div class="ac-date">QoL</div><div class="ac-title">Quality of Life Changes</div><span class="ac-badge bg">CONFIRMED</span><span class="ac-arr">▼</span></div>
+          <div class="ac-b"><div class="ac-c"><div class="tags" style="margin-top:10px;">
+            <span class="tag tg">Farming ticks every 1 min</span><span class="tag tg">Infinite run energy</span>
+            <span class="tag tg">Stackable clue scroll boxes</span><span class="tag tg">Shops don't deplete</span>
+            <span class="tag tg">Max cape at Leagues Tutor</span>
+            <span class="tag tb">Revenant Caves: Free entry</span>
+            <span class="tag tb">Wilderness Agility: Free entry</span>
+            <span class="tag tb">Wildy PvP deaths: Gravestone (no loss)</span>
+            <span class="tag tb">NMZ pts: 1gp each in Kandarin</span>
+            <span class="tag tgr">Zanaris + Abyss: All regions</span>
+            <span class="tag tgr">Forestry events 3× more likely</span>
+            <span class="tag tgr">Fremennik: Free Ice Gloves on unlock</span>
+          </div></div></div>
+        </div>
+        <div class="footer"><p>Live data from <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League" target="_blank">OSRS Wiki</a> via MediaWiki API · Reloads on every visit</p></div>
+      </div>
+
+      <!-- ══ REGIONS ══ -->
+      <div class="page" id="page-regions">
+        <div class="sh" style="margin-top:0"><h2>🗺 Region Planner</h2><div class="sh-line"></div></div>
+        <div class="notice">Varlamore &amp; Karamja are always available. Pick 3 more to unlock analysis.</div>
+        <div class="slot-bar">
+          <span class="slot-lbl">Unlockable slots used</span>
+          <div class="slot-pips" id="slot-pips"></div>
+        </div>
+        <div class="rgrid" id="rgrid"></div>
+        <div id="ra-wrap" style="display:none;">
+          <div class="sh"><h2>📊 Synergy Analysis</h2><div class="sh-line"></div></div>
+          <div class="agrid">
+            <div class="apanel"><div class="ap-lbl">Individual Synergy</div><div id="syn-bars"></div></div>
+            <div class="apanel"><div class="ap-lbl">Pair Ratings</div><div id="pair-bars"></div>
+              <div class="grade-box"><div class="grade-n" id="grade-n">—</div><div class="grade-l" id="grade-l">Select regions</div></div>
+              <div id="grade-fb"></div>
+            </div>
+          </div>
+          <div class="sh"><h2>👹 Boss Roster</h2><div class="sh-line"></div></div>
+          <div class="bgrid" id="boss-grid"></div>
+          <div class="sh"><h2>🏆 Key Items Available</h2><div class="sh-line"></div></div>
+          <div class="icloud" id="item-cloud"></div>
+          <div class="sh"><h2>📝 Region Notes</h2><div class="sh-line"></div></div>
+          <div id="region-notes"></div>
+        </div>
+        <div class="footer"><p>Synergy scores based on shared bosses, gear goals and progression overlap.</p></div>
+      </div>
+
+      <!-- ══ RELICS ══ -->
+      <div class="page" id="page-relics">
+        <div class="sh" style="margin-top:0"><h2>💎 Relic Planner</h2><div class="sh-line"></div></div>
+        <div class="wiki-bar" style="margin-bottom:14px;">
+          <div class="wiki-loading" id="relics-loading"><span class="spinner"></span>Fetching latest relics from OSRS Wiki...</div>
+          <div class="wiki-ok" id="relics-ok">✓ All 8 tiers loaded from OSRS Wiki</div>
+          <span class="wiki-ts" id="relics-ts"></span>
+        </div>
+        <div class="notice">One relic per tier — permanently locked in-game. Click/tap to choose. All tiers now fully revealed. Analysis updates live.</div>
+        <div id="relic-tiers"></div>
+        <div id="relic-analysis" style="display:none;">
+          <div class="sh"><h2>🔍 Build Analysis</h2><div class="sh-line"></div></div>
+          <div class="ra-panel">
+            <div class="ap-lbl">Skill Coverage</div>
+            <div class="skill-grid" id="skill-grid"></div>
+            <div id="overlap-warnings"></div>
+            <div class="crl" id="chosen-relic-list"></div>
+          </div>
+        </div>
+        <div class="footer"><p>Unknown tiers fill in as Jagex reveals them · <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League/Relics" target="_blank">OSRS Wiki Relics</a></p></div>
+      </div>
+
+      <!-- ══ PACTS ══ -->
+      <div class="page" id="page-pacts">
+        <div class="sh" style="margin-top:0"><h2>☠ Demonic Pacts</h2><div class="sh-line"></div></div>
+        <div class="wiki-bar" style="margin-bottom:16px;">
+          <div class="wiki-loading" id="pacts-fetching"><span class="spinner"></span>Fetching Demonic Pacts from OSRS Wiki...</div>
+          <span class="wiki-ts">Auto-updates from wiki on every visit</span>
+        </div>
+        <div class="notice">Combat masteries — separate from relics. Swappable at Yama's altars in Varlamore. Less linear than previous leagues.</div>
+
+        <!-- Live wiki content injected here -->
+        <div id="pacts-live-content"></div>
+
+        <!-- Confirmed pacts — always shown -->
+        <div class="sh"><h2>✓ Confirmed Pacts</h2><div class="sh-line"></div></div>
+        <div class="pact"><div class="p-icon">⚔</div><div><div class="p-name">Melee Pact</div><div class="p-desc">Melee attack range is doubled while using two-handed weapons.</div><div class="tags" style="margin-top:8px;"><span class="tag tr">Melee</span><span class="tag tg">2H weapons only</span><span class="tag bg" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:3px 9px;">CONFIRMED</span></div></div></div>
+        <div class="pact"><div class="p-icon">🔮</div><div><div class="p-name">Magic Pact</div><div class="p-desc">Heal 1 HP per water rune regenerated when casting combat spells.</div><div class="tags" style="margin-top:8px;"><span class="tag tb">Magic</span><span class="tag tg">Water rune spells</span><span class="tag bg" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:3px 9px;">CONFIRMED</span></div></div></div>
+        <div class="pact"><div class="p-icon">🏹</div><div><div class="p-name">Ranged Pact</div><div class="p-desc">Bows attack 1 tick faster. Does not apply to crossbows.</div><div class="tags" style="margin-top:8px;"><span class="tag tgr">Ranged</span><span class="tag tg">Bows only</span><span class="tag bg" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:3px 9px;">CONFIRMED</span></div></div></div>
+
+        <div class="sh"><h2>👹 Echo Bosses</h2><div class="sh-line"></div></div>
+        <div class="notice">Kill regular boss → get Echo Orb → fight demonic variant. Guaranteed unique drop above kill threshold.</div>
+        <div class="echo"><div class="echo-title">Amoxliatl Echo<span class="echo-reg">VARLAMORE</span></div><div class="echo-desc">Drops a combined weapon with the stats of three weapons in one item.</div></div>
+        <div class="echo"><div class="echo-title">Thermonuclear Smoke Devil Echo<span class="echo-reg">KANDARIN</span></div><div class="echo-desc">New 4-pronged magic main hand + off-hand weapon.</div></div>
+        <div class="echo"><div class="echo-title">Echo Hunllef<span class="echo-reg">TIRANNWN</span></div><div class="echo-desc">Confirmed Echo Boss for Tirannwn. Drops new unique rewards.</div></div>
+
+        <div class="footer"><p>Live data from <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League/Demonic_Pacts" target="_blank">OSRS Wiki — Demonic Pacts</a></p></div>
+      </div>
+
+      <!-- ══ LINKS ══ -->
+      <div class="page" id="page-links">
+        <div class="sh" style="margin-top:0"><h2>🔗 Official Sources</h2><div class="sh-line"></div></div>
+        <a class="lrow" href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League" target="_blank"><span class="l-icon">📖</span><div><div class="l-name">OSRS Wiki — Main Page</div><div class="l-desc">Full league overview, rules, all confirmed info</div></div><span class="l-arr">→</span></a>
+        <a class="lrow" href="https://oldschool.runescape.wiki/w/Update:Get_Ready_For_Leagues_VI:_Demonic_Pacts_-_April_15th" target="_blank"><span class="l-icon">📰</span><div><div class="l-name">Official Jagex Blog</div><div class="l-desc">Daily reveals, area details, full FAQ — updated live</div></div><span class="l-arr">→</span></a>
+        <a class="lrow" href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League/Relics" target="_blank"><span class="l-icon">💎</span><div><div class="l-name">Wiki — Relics Page</div><div class="l-desc">All confirmed relic choices and tier passives</div></div><span class="l-arr">→</span></a>
+        <a class="lrow" href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League/Demonic_Pacts" target="_blank"><span class="l-icon">☠</span><div><div class="l-name">Wiki — Demonic Pacts Tree</div><div class="l-desc">Combat mastery details as they're revealed</div></div><span class="l-arr">→</span></a>
+        <a class="lrow" href="https://discord.gg/OSRS" target="_blank"><span class="l-icon">💬</span><div><div class="l-name">Official OSRS Discord</div><div class="l-desc">#leagues-vi-faq and #announcements</div></div><span class="l-arr">→</span></a>
+        <a class="lrow" href="https://www.reddit.com/r/2007scape" target="_blank"><span class="l-icon">🗣</span><div><div class="l-name">r/2007scape</div><div class="l-desc">Community theorycrafting and daily discussion</div></div><span class="l-arr">→</span></a>
+        <a class="lrow" href="https://twitter.com/OldSchoolRS" target="_blank"><span class="l-icon">🐦</span><div><div class="l-name">@OldSchoolRS on X</div><div class="l-desc">Official daily reveals posted here first</div></div><span class="l-arr">→</span></a>
+        <div class="sh"><h2>👀 Still To Be Revealed</h2><div class="sh-line"></div></div>
+        <div class="tbd-list">
+          <div class="tbd-item"><span>❓</span><span>Tiers 2–7 relic choices (mostly unknown)</span></div>
+          <div class="tbd-item"><span>❓</span><span>Full Demonic Pacts combat mastery tree</span></div>
+          <div class="tbd-item"><span>❓</span><span>Remaining Echo Bosses and their rewards</span></div>
+          <div class="tbd-item"><span>❓</span><span>Flask of Fervour full details</span></div>
+          <div class="tbd-item"><span>❓</span><span>Complete task list per region</span></div>
+          <div class="tbd-item"><span style="color:var(--green);">✓</span><span>Daily reveals continue until April 14 — check back daily</span></div>
+        </div>
+        <div class="footer"><p>Wiki data fetches fresh on every visit · Last manual sync: April 7, 2026</p></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+// ── PAGES & NAV ──
+const PAGES=[{id:'updates',label:'Updates',icon:'📰'},{id:'regions',label:'Regions',icon:'🗺'},{id:'relics',label:'Relics',icon:'💎'},{id:'pacts',label:'Pacts',icon:'☠'},{id:'links',label:'Links',icon:'🔗'}];
+function buildNav(){
+  ['sb-nav','mob-nav'].forEach(nid=>{
+    const wrap=document.getElementById(nid); if(!wrap)return;
+    PAGES.forEach(p=>{
+      const el=document.createElement('div');
+      el.className='ni'+(p.id==='updates'?' active':'');
+      el.id=nid+'-'+p.id;
+      el.innerHTML=`<span class="ni-icon">${p.icon}</span>${p.label}`;
+      el.onclick=()=>{goPage(p.id);closeDrawer();};
+      wrap.appendChild(el);
+    });
+  });
+}
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni, .bn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  ['sb-nav-','mob-nav-','bn-'].forEach(pre=>{const el=document.getElementById(pre+id);if(el)el.classList.add('active');});
+  window.scrollTo(0,0);
+}
+function openDrawer(){document.getElementById('mob-overlay').classList.add('open');}
+function closeDrawer(){document.getElementById('mob-overlay').classList.remove('open');}
+
+// ── ACCORDION ──
+function acc(el){
+  const was=el.classList.contains('open');
+  el.closest('.page').querySelectorAll('.ac.open').forEach(a=>a.classList.remove('open'));
+  if(!was)el.classList.add('open');
+}
+
+// ── COUNTDOWN ──
+const LAUNCH=new Date('2026-04-15T00:00:00Z');
+(function tick(){
+  const diff=LAUNCH-new Date();
+  if(diff<=0){['sb-d','sb-h','sb-m','sb-s'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='00';});const mc=document.getElementById('mob-cd');if(mc)mc.textContent='LIVE!';return;}
+  const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  const p=n=>String(n).padStart(2,'0');
+  ['sb-d','sb-h','sb-m','sb-s'].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.textContent=p([d,h,m,s][i]);});
+  const mc=document.getElementById('mob-cd');if(mc)mc.textContent=`${d}d ${p(h)}h`;
+  setTimeout(tick,1000);
+})();
+
+// ── WIKI LIVE FETCH ──
+async function fetchWiki(){
+  const API='https://oldschool.runescape.wiki/api.php?action=parse&page=Demonic_Pacts_League&prop=wikitext&format=json&origin=*';
+  try{
+    const res=await fetch(API);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const wt=data?.parse?.wikitext?.['*']||'';
+    renderRevealFromWikitext(wt);
+    document.getElementById('wl').style.display='none';
+    document.getElementById('wo').style.display='flex';
+    document.getElementById('wts').textContent='Fetched: '+new Date().toLocaleTimeString();
+  }catch(e){
+    console.warn('Wiki fetch error:',e);
+    document.getElementById('wl').style.display='none';
+    document.getElementById('we').style.display='block';
+    renderFallbackReveal();
+  }
+}
+
+function renderRevealFromWikitext(wt){
+  const container=document.getElementById('live-reveals');
+  container.innerHTML='';
+  const rows=[];
+  // Find reveals table
+  const tStart=wt.indexOf('==Reveals');
+  if(tStart===-1){renderFallbackReveal();return;}
+  const tableStart=wt.indexOf('{|',tStart);
+  const tableEnd=wt.indexOf('|}',tableStart)+2;
+  if(tableStart===-1){renderFallbackReveal();return;}
+  const tableText=wt.substring(tableStart,tableEnd);
+  const chunks=tableText.split(/\n\|-\n/).slice(1);
+  chunks.forEach(chunk=>{
+    const cells=chunk.split(/\n\|/).filter(c=>c.trim()&&!c.startsWith('-'));
+    if(cells.length<2)return;
+    const rawDate=cells[0].replace(/'''|\[\[.*?\]\]|\{\{.*?\}\}/g,'').replace(/\n/g,'').trim();
+    const rawContent=cells[1];
+    const boldMatch=rawContent.match(/'''([^']{2,80})'''/);
+    const title=boldMatch?boldMatch[1]:rawContent.split('\n').find(l=>l.trim()&&!l.startsWith('*'))?.replace(/\[\[.*?\|?(.*?)\]\]/g,'$1').replace(/'''/g,'').trim()||'';
+    const links=[];
+    const lr=/\[\[([^\]|#]+?)(?:\|([^\]]+))?\]\]/g;
+    let m;
+    while((m=lr.exec(rawContent))!==null){
+      const page=m[1],label=m[2]||m[1];
+      if(!page.includes('File:')&&!page.includes('Image:')&&!page.includes('#')&&label.length<80)links.push({page,label});
+    }
+    if(rawDate&&title&&title.length<150)rows.push({date:rawDate,title,links});
+  });
+  if(!rows.length){renderFallbackReveal();return;}
+  rows.forEach((row,i)=>{
+    const div=document.createElement('div');
+    div.className='wri';
+    if(i===rows.length-1)div.style.borderLeftColor='var(--ember)';
+    const linksHtml=row.links.slice(0,6).map(l=>`<a class="wrl" href="https://oldschool.runescape.wiki/w/${encodeURIComponent(l.page.replace(/ /g,'_'))}" target="_blank">${l.label}</a>`).join('');
+    div.innerHTML=`<div class="wri-date">${row.date}</div><div class="wri-title">${row.title}${i===rows.length-1?'<span class="ndot"></span>':''}</div>${linksHtml?`<div class="wri-links">${linksHtml}</div>`:''}`;
+    container.appendChild(div);
+  });
+}
+
+function renderFallbackReveal(){
+  document.getElementById('live-reveals').innerHTML=`
+    <div class="wri"><div class="wri-date">Mar 23</div><div class="wri-title">Tier 1 Relics</div><div class="wri-links"><a class="wrl" href="https://oldschool.runescape.wiki/w/Endless_Harvest_(Demonic_Pacts_League)" target="_blank">Endless Harvest</a><a class="wrl" href="https://oldschool.runescape.wiki/w/Barbarian_Gathering_(Demonic_Pacts_League)" target="_blank">Barbarian Gathering</a><a class="wrl" href="https://oldschool.runescape.wiki/w/Abundance_(Demonic_Pacts_League)" target="_blank">Abundance</a></div></div>
+    <div class="wri" style="border-left-color:var(--ember)"><div class="wri-date">Mar 24</div><div class="wri-title">Minion — Tier 8<span class="ndot"></span></div><div class="wri-links"><a class="wrl" href="https://oldschool.runescape.wiki/w/Minion_(Demonic_Pacts_League)" target="_blank">Minion</a></div></div>
+    <div style="margin-top:8px;font-size:12px;color:var(--dim);font-style:italic;">Wiki unreachable — <a href="https://oldschool.runescape.wiki/w/Demonic_Pacts_League" target="_blank" style="color:var(--gold);">open wiki directly</a> for full reveals.</div>`;
+}
+
+// ── REGION DATA ──
+const REGIONS={
+  varlamore:{id:'varlamore',name:'Varlamore',emoji:'🏛',locked:true,tier:'S',bosses:[{name:'Fortis Colosseum',region:'Varlamore',drops:['Tonalztics of ralos','Sunfire fanatic armour','Echo boots']},{name:'Doom of Mokhaiotl',region:'Varlamore',drops:['Avernic treads','Mokhaiotl cloth','Eye of Ayak']},{name:'Vardorvis (DT2)',region:'Varlamore',drops:['Soulreaper axe pieces','Ultor ring','Virtus robes']},{name:'Amoxliatl',region:'Varlamore',drops:['Glacial temotli','Pendant of ates']},{name:'Hueycoatl',region:'Varlamore',drops:['Dragon hunter wand','Tome of earth']},{name:'Moons of Peril',region:'Varlamore',drops:['Lunar chest uniques']}],keyItems:['Avernic treads','Tonalztics of ralos','Dragon hunter wand','Sunfire fanatic armour','Soulreaper axe pieces'],synergies:{karamja:2,desert:3,kourend:3,morytania:2,wilderness:2,tirannwn:2,asgarnia:2,fremennik:1,kandarin:1},note:'Starting region. Colossal Wyrm Agility, Mastering Mixology, Hunters Rumours, Stealing Valuables, Blessed bone shards for Prayer.'},
+  karamja:{id:'karamja',name:'Karamja',emoji:'🌴',locked:true,tier:'B',bosses:[{name:'Fight Caves / Jad',region:'Karamja',drops:['Fire cape','Jal-nib-rek']},{name:'The Inferno',region:'Karamja',drops:['Infernal cape']}],keyItems:['Fire cape','Infernal cape','Obsidian gear'],synergies:{varlamore:2,desert:3,kourend:2,asgarnia:2,wilderness:1,morytania:1,fremennik:1,tirannwn:1,kandarin:1},note:'Free with Varlamore. Fight Caves and Inferno for capes. Brimhaven Agility Arena. Teak and Mahogany woodcutting.'},
+  desert:{id:'desert',name:'Kharidian Desert',emoji:'🏜',tier:'S',bosses:[{name:'Zulrah',region:'Desert',drops:['Tanzanite fang','Magic fang','Serpentine visage']},{name:'Tombs of Amascut 500+',region:'Desert',drops:["Tumeken's shadow",'Masori armour',"Osmumten's fang",'Lightbearer']},{name:'The Leviathan (DT2)',region:'Desert',drops:['Soulreaper axe pieces','Bellator ring']},{name:'Duke Sucellus (DT2)',region:'Desert',drops:['Soulreaper axe pieces','Magus ring']},{name:'Nex',region:'Desert',drops:['Zaryte crossbow','Torva armour','Nihil shards']}],keyItems:['Toxic blowpipe','Trident of the swamp',"Tumeken's shadow",'Torva armour','Zaryte crossbow','Soulreaper axe'],synergies:{varlamore:3,karamja:3,kourend:3,morytania:3,tirannwn:2,wilderness:2,asgarnia:2,fremennik:2,kandarin:2},note:'S-tier. Zulrah has no damage cap or melee immunity. ToA included here (confirmed). All DT2 bosses drop all Soulreaper pieces. Nex bulk Nihil shards.'},
+  kourend:{id:'kourend',name:'Kourend & Kebos',emoji:'🏰',tier:'S',bosses:[{name:'Chambers of Xeric CM',region:'Kourend',drops:['Twisted bow','Kodai wand','Elder maul','Dragon hunter crossbow']},{name:'Alchemical Hydra',region:'Kourend',drops:['Hydra leather','Brimstone ring']},{name:'Cerberus',region:'Kourend',drops:['Primordial crystal','Pegasian crystal','Eternal crystal']},{name:'Sarachnis',region:'Kourend',drops:['Sarachnis cudgel']},{name:'Kraken',region:'Kourend',drops:['Trident of the seas','Kraken tentacle']}],keyItems:['Twisted bow','Kodai wand','Elder maul','Primordial boots','Pegasian boots','Eternal boots','Brimstone ring','Dragon warhammer'],synergies:{varlamore:3,desert:3,morytania:3,tirannwn:3,karamja:2,wilderness:2,asgarnia:2,fremennik:2,kandarin:2},note:'S-tier. CoX CM: +25% dmg/def, +50% HP, 3× unique chance. Catacombs exceptional for Slayer. Cerberus boots high value.'},
+  morytania:{id:'morytania',name:'Morytania',emoji:'🩸',tier:'A',bosses:[{name:'Theatre of Blood HM',region:'Morytania',drops:['Scythe of Vitur','Ghrazi rapier','Justiciar armour','Avernic defender']},{name:'Nightmare of Ashihama',region:'Morytania',drops:["Inquisitor's armour",'Nightmare staff']},{name:'Grotesque Guardians',region:'Morytania',drops:['Granite gloves','Dark tourmaline core']},{name:'Barrows Brothers',region:'Morytania',drops:['Barrows equipment']}],keyItems:['Scythe of Vitur','Ghrazi rapier','Avernic defender','Justiciar armour',"Inquisitor's armour"],synergies:{kourend:3,desert:3,tirannwn:3,varlamore:2,wilderness:2,asgarnia:2,karamja:1,fremennik:1,kandarin:2},note:'ToB HM: +25% dmg/def, +50% HP, 2× unique chance. Whole group gets uniques. Scythe charges with blood runes only.'},
+  tirannwn:{id:'tirannwn',name:'Tirannwn',emoji:'🌿',tier:'A',bosses:[{name:'Zulrah (alt)',region:'Tirannwn',drops:['Tanzanite fang','Magic fang']},{name:'Gauntlet / Corrupted Gauntlet',region:'Tirannwn',drops:['Crystal armour seed','Enhanced crystal weapon seed']}],keyItems:['Enhanced crystal weapon seed','Crystal armour','Elven signet','Death altar'],synergies:{kourend:3,morytania:3,desert:2,varlamore:2,asgarnia:2,wilderness:1,karamja:1,fremennik:1,kandarin:2},note:'Corrupted Gauntlet for crystal gear. Prifddinas agility course. Crystal implings. Zalcano for crystal tool seeds.'},
+  wilderness:{id:'wilderness',name:'Wilderness',emoji:'☠',tier:'A',bosses:[{name:'Callisto / Artio',region:'Wilderness',drops:['Tyrannical ring']},{name:'Venenatis / Spindel',region:'Wilderness',drops:['Treasonous ring']},{name:"Vet'ion / Calvar'ion",region:'Wilderness',drops:['Ring of the gods']},{name:'Chaos Elemental',region:'Wilderness',drops:['Dragon pickaxe','Dragon 2h sword']},{name:'Revenant Caves',region:'Wilderness',drops:['Craws bow','Thammarons sceptre']}],keyItems:['Tyrannical ring','Treasonous ring','Dragon pickaxe','Craws bow','Odium ward'],synergies:{varlamore:2,desert:2,kourend:2,asgarnia:2,morytania:2,karamja:1,fremennik:1,tirannwn:1,kandarin:1},note:'No diary req for bosses. PvP deaths use gravestone — no item loss. Rev Caves and Wildy Agility Course both free entry. Chaos Altar for Prayer XP.'},
+  asgarnia:{id:'asgarnia',name:'Asgarnia',emoji:'⚔',tier:'B',bosses:[{name:'God Wars Dungeon (all 4)',region:'Asgarnia',drops:['Armadyl armour','Bandos armour','Zamorakian hasta','Godswords']},{name:'The Whisperer (DT2)',region:'Asgarnia',drops:['Soulreaper axe pieces','Ultor ring']},{name:'Giant Mole',region:'Asgarnia',drops:['Mole skin']}],keyItems:['Armadyl armour','Bandos armour','Zamorakian hasta','Staff of the dead','Godswords'],synergies:{varlamore:2,desert:2,kourend:2,karamja:2,morytania:2,wilderness:2,fremennik:2,tirannwn:2,kandarin:3},note:'God Wars Dungeon for strong mid-game gear. Pairs very well with Kandarin. Motherlode Mine. Falador Agility rooftop.'},
+  fremennik:{id:'fremennik',name:'Fremennik',emoji:'❄',tier:'B',bosses:[{name:'Vorkath',region:'Fremennik',drops:['Dragonbone necklace','Draconic visage','Skeletal visage']},{name:'Dagannoth Kings',region:'Fremennik',drops:['Berserker ring','Archers ring','Dragon axe']},{name:'Phantom Muspah',region:'Fremennik',drops:['Venator bow','Saturated heart']}],keyItems:['Berserker ring','Archers ring','Dragon axe','Venator bow','Saturated heart'],synergies:{varlamore:1,desert:2,kourend:2,karamja:1,morytania:1,wilderness:1,asgarnia:2,tirannwn:1,kandarin:2},note:'Vorkath for Dragon bones and high-value drops. Dagannoth Kings for rings. Free Ice Gloves on unlock. Blast Furnace for Smithing.'},
+  kandarin:{id:'kandarin',name:'Kandarin',emoji:'🌊',tier:'B',bosses:[{name:'Thermonuclear Smoke Devil',region:'Kandarin',drops:['Occult necklace','Smoke battlestaff','Echo weapon']},{name:'Dagannoth Kings',region:'Kandarin',drops:['Berserker ring','Archers ring','Seers ring']},{name:'Demonic Gorillas',region:'Kandarin',drops:['Zenyte shard','Ballista']},{name:'Barbarian Assault',region:'Kandarin',drops:['Fighter torso']}],keyItems:['Fighter torso','Imbued god capes','Seers ring (i)','Occult necklace','Zenyte shard'],synergies:{asgarnia:3,varlamore:1,desert:2,kourend:2,morytania:2,fremennik:2,karamja:1,wilderness:1,tirannwn:2},note:'NMZ pts just 1gp each — massive for imbuing. Barbarian Assault for fighter torso. Echo Boss: Thermonuclear Smoke Devil drops new magic weapons.'},
+};
+
+// ── REGION PLANNER ──
+let selR=['varlamore','karamja'];
+function unlockedR(){return selR.filter(id=>id!=='varlamore'&&id!=='karamja');}
+function sc(v){return v>=3?'var(--gold)':v>=2?'#e8a090':'var(--dim)';}
+
+function renderRegions(){
+  const grid=document.getElementById('rgrid'),pips=document.getElementById('slot-pips');
+  const used=unlockedR().length,left=3-used;
+  pips.innerHTML='';
+  for(let i=0;i<3;i++){const p=document.createElement('div');p.className='pip '+(i<used?'used':'free');p.textContent=i<used?'✓':(i+1);pips.appendChild(p);}
+  grid.innerHTML='';
+  Object.values(REGIONS).forEach(r=>{
+    const isSel=selR.includes(r.id),isLocked=!!r.locked,isMaxed=!isLocked&&!isSel&&left===0;
+    const div=document.createElement('div');
+    div.className='rcard'+(isLocked?' rl':'')+(isSel&&!isLocked?' rc':'')+(isMaxed?' rm':'');
+    div.innerHTML=`
+      <div class="rc-top">
+        <span class="rc-em">${r.emoji}</span>
+        <span class="rc-nm">${r.name}</span>
+        <span class="tier-badge-sm t${r.tier}">${r.tier}</span>
+        ${isSel&&!isLocked?'<span class="rc-ck">✓</span>':''}
+      </div>
+      ${isLocked?'<span class="rc-lt">Always Active</span>':''}
+      <div class="rc-note">${r.note.split('.')[0]}.</div>`;
+    if(!isLocked)div.addEventListener('click',()=>{
+      if(isSel)selR=selR.filter(id=>id!==r.id);else if(left>0)selR.push(r.id);
+      renderRegions();renderRegionAnalysis();
+    });
+    grid.appendChild(div);
+  });
+}
+
+function synScore(){
+  const u=unlockedR();if(u.length<2)return 0;
+  let tot=0,cnt=0;
+  for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){const a=REGIONS[u[i]],b=REGIONS[u[j]];if(a&&b){tot+=(a.synergies[u[j]]||0);cnt++;}}
+  return cnt?Math.round((tot/(cnt*3))*100):0;
+}
+function gradeFor(s){return s>=85?'S':s>=70?'A':s>=50?'B':'C';}
+
+function renderRegionAnalysis(){
+  const u=unlockedR(),wrap=document.getElementById('ra-wrap');
+  if(u.length<3){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  // Syn bars
+  const sb=document.getElementById('syn-bars');sb.innerHTML='';
+  u.forEach(id=>{const r=REGIONS[id],others=u.filter(x=>x!==id),avg=others.length?others.reduce((s,x)=>s+(r.synergies[x]||0),0)/others.length:0,v=Math.round(avg);sb.innerHTML+=`<div class="syn-row"><div class="syn-lbl">${r.emoji} ${r.name}</div><div class="syn-track"><div class="syn-fill" style="width:${Math.round((avg/3)*100)}%;background:${sc(v)};"></div></div><div class="syn-val">${v}/3</div></div>`;});
+  // Pair bars
+  const pb=document.getElementById('pair-bars');pb.innerHTML='';
+  for(let i=0;i<u.length;i++)for(let j=i+1;j<u.length;j++){const a=REGIONS[u[i]],b=REGIONS[u[j]],v=a.synergies[u[j]]||0;pb.innerHTML+=`<div class="syn-row"><div class="syn-lbl">${a.emoji}+${b.emoji} Pair</div><div class="syn-track"><div class="syn-fill" style="width:${Math.round((v/3)*100)}%;background:${sc(v)};"></div></div><div class="syn-val">${v}/3</div></div>`;}
+  const s=synScore(),g=gradeFor(s);
+  document.getElementById('grade-n').textContent=g;document.getElementById('grade-n').className='grade-n g'+g;
+  document.getElementById('grade-l').textContent='Synergy Grade · '+s+'%';
+  const fb=document.getElementById('grade-fb');
+  if(s>=80)fb.innerHTML='<div class="fb-good">✦ Excellent synergy — shared bosses, gear goals and skill paths.</div>';
+  else if(s<50)fb.innerHTML='<div class="fb-warn">⚠ Low synergy — consider swapping a region.</div>';
+  else fb.innerHTML='';
+  // Boss grid
+  const bg=document.getElementById('boss-grid');bg.innerHTML='';
+  const seen=new Set();
+  selR.forEach(id=>(REGIONS[id]?.bosses||[]).forEach(b=>{if(seen.has(b.name))return;seen.add(b.name);bg.innerHTML+=`<div class="bc"><div class="bc-name">${b.name}</div><div class="bc-region">${b.region}</div><div class="bc-drops">${b.drops.slice(0,2).map(d=>`<span class="dtag">${d}</span>`).join('')}</div></div>`;}));
+  // Items
+  const ic=document.getElementById('item-cloud');ic.innerHTML='';
+  const is=new Set();selR.forEach(id=>(REGIONS[id]?.keyItems||[]).forEach(item=>{if(is.has(item))return;is.add(item);ic.innerHTML+=`<span class="ichip">${item}</span>`;}));
+  // Notes
+  const rn=document.getElementById('region-notes');rn.innerHTML='';
+  selR.forEach(id=>{const r=REGIONS[id];rn.innerHTML+=`<div style="background:var(--surface);border:1px solid var(--border);border-left:2px solid rgba(201,168,76,0.3);padding:9px 12px;margin-bottom:7px;"><div style="font-family:'Cinzel',serif;font-size:10px;color:var(--gold);margin-bottom:3px;">${r.emoji} ${r.name}</div><div style="font-size:12.5px;color:var(--dim);font-style:italic;">${r.note}</div></div>`;});
+}
+
+// ── RELIC DATA (complete, all tiers now revealed) ──
+const SKILLS=['Agility','Thieving','Hunter','Herblore','Prayer','Slayer','Magic','Ranged','Melee','Runecraft','Mining','Woodcutting','Fishing','Farming','Crafting','Fletching','Cooking','Firemaking','Construction','Smithing','Strength','Clue Scrolls'];
+
+// Base relic data — augmented by live wiki fetch
+let RELICS=[
+  {tier:1,pts:0,passive:'5× XP · 2× drops · 4× minigame pts · 1-min farming · infinite run · stackable clues',choices:[
+    {id:'eh',name:'Endless Harvest',icon:'⛏',type:'Gathering',desc:'Auto-bank resources (toggle). 2× yield from Fishing/WC/Mining. Nodes never deplete after first interaction. Chase fishing spots automatically.',solves:['Fishing','Woodcutting','Mining'],note:'Best for task stacking and passive wealth.'},
+    {id:'bg',name:'Barbarian Gathering',icon:'🪓',type:'Hybrid',desc:'Bare-hand gathering at crystal-tool level. +10% Str/Agility XP while gathering. 50% retry on fail. Grants knapsack (140 cap for 3 resource types).',solves:['Fishing','Woodcutting','Mining','Strength','Agility'],note:'Passive Agility and Strength while skilling is very powerful.'},
+    {id:'ab',name:'Abundance',icon:'🌿',type:'Utility',desc:'All non-combat skills +10 permanently. Extra 2 XP per XP drop. 2× coins per XP gained.',solves:['Thieving','Herblore','Crafting','Fletching','Cooking','Firemaking','Construction','Farming','Smithing','Runecraft','Agility'],note:'Strongest for Thieving and Herblore. Note: Searing Boots moved to Tier 2 Hotfoot relic.'},
+  ]},
+  {tier:2,pts:750,passive:'XP: 5× → 8×',choices:[
+    {id:'hf',name:'Hotfoot',icon:'🔥',type:'Agility / Skilling',desc:'Grants Searing Boots. While worn: Agility XP while running, auto-cook fish, auto-smelt ore. Passives: 100% Agility/Cooking success, marks of grace always 33% chance, completing a rooftop lap grants 2 laps + 25% bonus XP, 2× termites from Wyrm course.',solves:['Agility','Cooking','Smithing'],note:'Best Agility relic. Massive for Colossal Wyrm course and any rooftop training.'},
+    {id:'ff2',name:'Friendly Forager',icon:'🌱',type:'Herblore / Gathering',desc:'Grants Forager\'s Pouch. While worn: gathering gives a random grimy herb. Acts as a herb sack. Herblore passives: all items processed at once, 90% chance secondaries not consumed, potions give 4 doses instead of 3.',solves:['Herblore','Hunter','Farming'],note:'Incredible for Herblore. Free herbs from all gathering activities. 4-dose potions save huge amounts of time.'},
+    {id:'ws',name:'Woodsman',icon:'🌲',type:'Skilling',desc:'Auto-burns logs (toggle). Banks Hunter loot (toggle). 100% Hunter success. Hunter traps give 2× loot and XP. Hunter rumours give 2× XP and loot sacks give 2× loot. Impling loot doubled and noted. Quetzal Whistles never lose charges.',solves:['Woodcutting','Firemaking','Fletching','Hunter'],note:'Best Hunter relic. Double impling loot + Hunter rumours rewards are exceptional.'},
+  ]},
+  {tier:3,pts:1500,passive:'+1.5× combat XP (multiplicative) · Bigger & Badder free · 5× Slayer pts · Superiors 1/50',choices:[
+    {id:'ee',name:'Evil Eye',icon:'👁',type:'Teleportation',desc:'Grants the Evil Eye item. Teleport to the entrance of any boss or raid in the Combat Achievements list. Can reach each Moon of Peril individually. Ignores Wilderness teleport restrictions. Cannot teleport to unlocked areas you don\'t have.',solves:['Slayer','Magic'],note:'Incredible quality of life for bossing. Instant teleport to any boss — completely removes travel time.'},
+    {id:'ma',name:'Map of Alacrity',icon:'🗺',type:'Teleportation',desc:'Grants Map of Alacrity. Teleport to agility shortcuts — sent to the less favourable side. Ignores Wilderness teleport restrictions. All shortcut requirements still apply.',solves:['Agility'],note:'Strong for Agility-heavy builds. Synergises with Hotfoot for rapid course completion.'},
+  ]},
+  {tier:4,pts:2500,passive:'Drops: 2× → 5× · Minigame pts: 4× → 8×',choices:[
+    {id:'tm',name:'Transmutation',icon:'⚗',type:'Crafting / Magic',desc:'Grants Transmutation Ledger (infinite Nature runes). High/Low Alchemy become Alchemic Divergence (upgrade resource) and Alchemic Convergence (downgrade resource). Both cost 1 Nature rune, no level req, give 10 Magic XP each. Can auto-recast on noted stacks.',solves:['Magic','Crafting','Smithing'],note:'Completely replaces alchemy. Upgrade ores, logs, fish between tiers. Ledger doubles as Book of the Dead.'},
+    {id:'cc',name:'Conniving Clues',icon:'📜',type:'Clue Scrolls',desc:'Opening caskets gives 1/3 chance of clue contracts (teleport to current step). Caskets have 1/4 chance to contain another clue scroll. Creature clues drop at 1/15. Skilling clue vessels 10× more likely. All clues have minimum steps and maximum reward rolls. Emote/Falo steps have no item requirements.',solves:['Clue Scrolls'],note:'Best clue scroll relic. Combined with 8× minigame pts passive, clue rewards are exceptional.'},
+    {id:'bb',name:"Butler's Bell",icon:'🔔',type:'Gathering / Processing',desc:"Grants Butler's Bell. Ring it to summon a Demon Butler who works offline. Butler gathers: 8 ores/min, 14 fish/min, 10 logs/min, 50 flax/min, 10 herbs/min. Can process at half rates (smelt, cook, make planks, spin, make unfinished potions). Gives 10 XP per item processed.",solves:['Mining','Fishing','Woodcutting','Farming','Herblore','Smithing','Crafting','Fletching','Cooking'],note:'Passive income while you play. Best combined with Butler\'s Bell for offline resource generation.'},
+  ]},
+  {tier:5,pts:5000,passive:'XP: 8× → 12×',choices:[
+    {id:'na',name:"Nature's Accord",icon:'🍄',type:'Farming / Teleportation',desc:'Grants Fairy Mushroom. Farming: 10× yield from all patches (auto-noted), plants never die, 20% chance to not consume a seed, no level requirements to harvest/plant. Teleport to any fairy ring, spirit tree, or tool leprechaun. Ignores Wilderness restrictions.',solves:['Farming','Runecraft'],note:'The definitive Farming relic. 10× yield makes Herblore secondaries essentially free. Fairy ring teleportation is huge mobility.'},
+    {id:'lc',name:'Larcenist',icon:'🖐',type:'Thieving',desc:'100% Thieving success rate. Auto-repickpocket NPCs. Auto-re-steal from stalls. Pickpocket and stall loot noted. Stalls never deplete. Guards never catch you. Coin pouch cap 10×. All Thieving loot 10× (pickpocketing, stalls, Varlamore valuables).',solves:['Thieving'],note:'Makes Thieving completely AFK and massively profitable. 10× loot from Varlamore valuables is extraordinary.'},
+    {id:'sh',name:'Soul Harvest',icon:'💀',type:'Prayer / Runecraft',desc:'Bones and ashes become stackable soul shards (toggle). Soul shards replace pure essence for Runecraft. 100 shards at the Teomat libation bowl = 550 Prayer XP (no libation wine needed). Receive 1 shard per 4 XP while harvesting farming crops. Higher tier bones give proportionally more shards.',solves:['Prayer','Runecraft'],note:'Completely transforms Prayer and Runecraft training. Best for players who kill a lot of monsters — passive Prayer XP from all combat.'},
+  ]},
+  {tier:6,pts:8000,passive:'No passive — power is in the relic choice',choices:[
+    {id:'gr',name:'Grimoire',icon:'📖',type:'Magic / Prayer',desc:'Grants Arcane Grimoire (acts as Book of the Dead). Freely swap between all spellbooks. Unlocks ALL prayers and spells regardless of area, quest, or diary requirements.',solves:['Magic','Prayer'],note:'Unlock every prayer (including Ancient Curses, Wrath) and every spellbook from day 1. Enormous flexibility.'},
+    {id:'cs',name:'Culling Spree',icon:'⚔',type:'Slayer',desc:'Choose Slayer task from 3 options (at least 1 boss task). Task kill count selectable (5-200). Superiors have 50% chance to spawn another Superior on death. Superiors always drop 1-3 Elite clues. Slayer helmet (i) effects without wearing one. All Slayer reward shop perks free. Rune pouch, Herb sack, Looting bag purchasable from Slayer shop.',solves:['Slayer'],note:'The ultimate Slayer relic. Choose your own tasks, chain Superiors, free Slayer helm (i). Essential if going Slayer-heavy.'},
+  ]},
+  {tier:7,pts:16000,passive:'XP: 12× → 16×',choices:[
+    {id:'rl',name:'Reloaded',icon:'🔄',type:'Special',desc:'Choose another relic from any tier below this one. Effectively gives you an extra relic choice from Tiers 1–6.',solves:[],note:'Extremely powerful — duplicate your best relic from any previous tier. Pick a second T1, T2, or T6 relic that complements your build.'},
+  ]},
+  {tier:8,pts:25000,passive:'No passive — choose your endgame power',choices:[
+    {id:'mn',name:'Minion',icon:'👿',type:'Combat',desc:'Grants Minion Whistle. Summons demonic familiar for 30 min: min hit 3, max hit 10, speed 1.8, accuracy 45,000. AoE attacks in multi-combat if target is weak to Range/Magic. Feed 5 unique Zamorak items for +2 max hit each. Auto-loots your kills. Does not fight Yama or in PvP.',solves:['Slayer','Melee','Ranged','Magic'],note:'Best all-round endgame pick. Shreds Superiors, provides constant extra DPS, auto-loots everything.'},
+    {id:'fof',name:'Flask of Fervour',icon:'⚗',type:'Combat',desc:'Grants Flask of Fervour. On use: full HP, full Prayer, full Special Attack. Then triggers 3 explosions over 2.4s dealing 60% of Prayer level as typeless AoE damage within 3 tiles (30% in PvP), and reduces all damage to 0. Base cooldown 3 min, reduced by 0.6s per 10 damage dealt in a single hit.',solves:['Melee','Ranged','Magic'],note:'Extremely powerful for bosses and raids. Full restore + AoE damage + damage immunity every ~3 minutes. Works in Gauntlet.'},
+  ]},
+];
+
+let chosenR={};
+
+// ── LIVE RELIC FETCH ──
+async function fetchRelics(){
+  const container=document.getElementById('relic-tiers');
+  container.innerHTML='<div style="padding:20px;font-size:14px;color:var(--dim);font-style:italic;display:flex;align-items:center;gap:10px;"><span class="spinner"></span>Fetching latest relics from OSRS Wiki...</div>';
+  const API='https://oldschool.runescape.wiki/api.php?action=parse&page=Demonic_Pacts_League%2FRelics&prop=wikitext&format=json&origin=*';
+  try{
+    const res=await fetch(API);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const wt=data?.parse?.wikitext?.['*']||'';
+    if(wt) mergeRelicsFromWiki(wt);
+    document.getElementById('relics-loading')?.style && (document.getElementById('relics-loading').style.display='none');
+    const ok=document.getElementById('relics-ok'); if(ok){ok.style.display='flex';}
+    const ts=document.getElementById('relics-ts'); if(ts) ts.textContent='Fetched: '+new Date().toLocaleTimeString();
+  }catch(e){
+    console.warn('Relics fetch error:',e);
+    document.getElementById('relics-loading')?.style && (document.getElementById('relics-loading').style.display='none');
+  }
+  renderRelics();
+}
+
+function mergeRelicsFromWiki(wt){
+  // Extract tier sections and their relic names from the wiki navbox
+  // Pattern: | Tier N | * [[RelicName]] * [[RelicName2]]
+  const tierMatches=[...wt.matchAll(/\|\s*Tier\s*(\d)\s*\|\s*([\s\S]*?)(?=\|\s*Tier|\|\})/g)];
+  const TIER_PASSIVES={
+    1:'5× XP · 2× drops · 4× minigame pts · 1-min farming · infinite run · stackable clues',
+    2:'XP: 5× → 8×',
+    3:'+1.5× combat XP (multiplicative) · Bigger & Badder free · 5× Slayer pts · Superiors 1/50',
+    4:'Drops: 2× → 5× · Minigame pts: 4× → 8×',
+    5:'XP: 8× → 12×',
+    6:'No passive — power is in the relic choice',
+    7:'XP: 12× → 16×',
+    8:'No passive — choose your endgame power',
+  };
+  const TIER_PTS={1:0,2:750,3:1500,4:2500,5:5000,6:8000,7:16000,8:25000};
+  if(!tierMatches.length) return; // fallback to hardcoded
+  
+  // Parse each tier's relic names from wikitext links
+  const wikiTiers={};
+  tierMatches.forEach(m=>{
+    const tierNum=parseInt(m[1]);
+    const content=m[2];
+    const names=[...content.matchAll(/\[\[([^\]|]+?)(?:\s*\([^)]+\))?\s*(?:\|[^\]]+)?\]\]/g)]
+      .map(x=>x[1].replace(/\s*\([^)]+\)/,'').trim())
+      .filter(n=>!n.includes('File:')&&n.length>1&&n.length<60);
+    if(names.length) wikiTiers[tierNum]=names;
+  });
+
+  // Extract full relic descriptions from tier sections in the wikitext
+  const relicDescMap={};
+  const effectsRegex=/===?\s*(?:Tier\s*\d[^=]*)?===?\s*\n(?:[\s\S]*?(?=\n===|\n$))/g;
+  // Simpler: just extract all table rows with relic names and their effect text
+  const tableRE=/\|\s*\[\[([^\]|]+(?:\([^)]*\))?)\|?[^\]]*\]\]\s*\|\s*([\s\S]+?)(?=\n\|-|\n\|})/g;
+  let tm;
+  while((tm=tableRE.exec(wt))!==null){
+    const rawName=tm[1].replace(/\s*\([^)]*\)/,'').trim();
+    const effect=tm[2].replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g,'$2').replace(/\'{2,3}/g,'').replace(/\*\s*/g,'').replace(/\n+/g,' ').trim().substring(0,300);
+    if(rawName&&effect&&effect.length>10) relicDescMap[rawName]=effect;
+  }
+
+  // Rebuild RELICS array with wiki names, keeping our enriched data where names match
+  const existingById={};
+  RELICS.forEach(t=>t.choices.forEach(c=>{existingById[c.id]=c; existingById[c.name.toLowerCase()]=c;}));
+
+  RELICS=Object.entries(wikiTiers).map(([tierNumStr,names])=>{
+    const tierNum=parseInt(tierNumStr);
+    const choices=names.map((name,i)=>{
+      // Try to find matching existing relic by name similarity
+      const existing=Object.values(existingById).find(c=>
+        c.name.toLowerCase()===name.toLowerCase()||
+        name.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])||
+        c.name.toLowerCase().includes(name.toLowerCase().split(' ')[0])
+      );
+      const wikiDesc=relicDescMap[name]||relicDescMap[name+' (Demonic Pacts League)']||'';
+      return {
+        id: existing?.id || `t${tierNum}_${i}`,
+        name: name,
+        icon: existing?.icon || ['⛏','🪓','🌿','🌲','🔥','🌱','👁','🗺','⚗','📜','🔔','🍄','🖐','💀','📖','⚔','🔄','👿','⚗'][Object.keys(existingById).indexOf(name.toLowerCase())]||'🔮',
+        type: existing?.type || 'Relic',
+        desc: existing?.desc || wikiDesc || 'See OSRS Wiki for full details.',
+        solves: existing?.solves || [],
+        note: existing?.note || '',
+        wikiName: name,
+      };
+    });
+    return {tier:tierNum, pts:TIER_PTS[tierNum]||0, passive:TIER_PASSIVES[tierNum]||'', choices};
+  }).sort((a,b)=>a.tier-b.tier);
+}
+
+function renderRelics(){
+  const c=document.getElementById('relic-tiers');c.innerHTML='';
+  RELICS.forEach(tier=>{
+    const b=document.createElement('div');b.className='tb-block';
+    const choicesHtml=tier.choices.map(ch=>{
+      const isChosen=chosenR[tier.tier]===ch.id;
+      const wikiUrl=ch.wikiName?`https://oldschool.runescape.wiki/w/${encodeURIComponent(ch.wikiName.replace(/ /g,'_')+'_(Demonic_Pacts_League)')}`:'';
+      return `<div class="rch ${isChosen?'chosen':''}" onclick="pickRelic(${tier.tier},'${ch.id}')">
+        ${isChosen?'<span class="chosen-fire">🔥</span>':''}
+        <div class="rch-icon">${ch.icon||'🔮'}</div>
+        <div class="rch-name">${ch.name}</div>
+        <div class="rch-type">${ch.type||'Relic'}</div>
+        <div class="rch-desc">${ch.desc}</div>
+        ${ch.solves&&ch.solves.length?`<div class="rch-solves">${ch.solves.map(s=>`<span class="stag">✓ ${s}</span>`).join('')}</div>`:''}
+        ${ch.note?`<div class="rch-note">${ch.note}</div>`:''}
+        ${wikiUrl?`<a href="${wikiUrl}" target="_blank" onclick="event.stopPropagation()" style="display:inline-block;margin-top:8px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--gold);opacity:0.6;text-decoration:none;">→ OSRS Wiki</a>`:''}
+      </div>`;
+    }).join('');
+    b.innerHTML=`<div class="tb-head"><span class="tb-badge">TIER ${tier.tier}</span><span class="tb-pts">${(tier.pts||0).toLocaleString()} pts</span><span class="tb-passive">${tier.passive}</span></div><div class="tb-choices">${choicesHtml}</div>`;
+    c.appendChild(b);
+  });
+  renderRelicAnalysis();
+}
+
+function pickRelic(tier,id){
+  if(chosenR[tier]===id)delete chosenR[tier];else chosenR[tier]=id;
+  renderRelics();
+}
+
+function renderRelicAnalysis(){
+  const ids=Object.values(chosenR),wrap=document.getElementById('relic-analysis');
+  if(!ids.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  const allChoices=RELICS.flatMap(t=>t.choices);
+  const covered=new Set();
+  ids.forEach(rid=>{const r=allChoices.find(c=>c.id===rid);if(r)r.solves.forEach(s=>covered.add(s));});
+  const sg=document.getElementById('skill-grid');sg.innerHTML='';
+  SKILLS.forEach(s=>{const cov=covered.has(s);sg.innerHTML+=`<div class="ski ${cov?'cov':'unc'}"><div class="skdot ${cov?'cov':'unc'}"></div><span>${s}</span></div>`;});
+  const sm={};ids.forEach(rid=>{const r=allChoices.find(c=>c.id===rid);if(r&&r.solves)r.solves.forEach(s=>{if(!sm[s])sm[s]=[];sm[s].push(r.name);});});
+  const ols=Object.entries(sm).filter(([,v])=>v.length>1);
+  const ow=document.getElementById('overlap-warnings');
+  if(ols.length)ow.innerHTML=ols.map(([s,n])=>`<div class="ow">⚠ <strong>${s}</strong> covered by both <em>${n.join(' & ')}</em> — potential overlap.</div>`).join('');
+  else if(ids.length>=2)ow.innerHTML='<div style="background:var(--green-dim);border:1px solid rgba(39,174,96,0.25);padding:9px 12px;font-size:14px;color:#7fe0a0;margin-top:8px;">✦ No overlaps — relics cover different areas efficiently.</div>';
+  else ow.innerHTML='';
+  const cl=document.getElementById('chosen-relic-list');
+  cl.innerHTML='<div style="font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;">Your Selections</div>';
+  Object.entries(chosenR).sort((a,b)=>a[0]-b[0]).forEach(([tier,rid])=>{
+    const r=allChoices.find(c=>c.id===rid);if(!r)return;
+    cl.innerHTML+=`<div class="cr-item"><div class="cr-name">${r.icon||'🔮'} T${tier}: ${r.name}</div>${r.solves&&r.solves.length?`<div class="rch-solves">${r.solves.map(s=>`<span class="stag">✓ ${s}</span>`).join('')}</div>`:''}</div>`;
+  });
+}
+
+// ── LIVE PACTS FETCH ──
+async function fetchPacts(){
+  const API='https://oldschool.runescape.wiki/api.php?action=parse&page=Demonic_Pacts_League%2FDemonic_Pacts&prop=text&format=json&origin=*';
+  const container=document.getElementById('pacts-live-content');
+  if(!container) return;
+  try{
+    const res=await fetch(API);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const html=data?.parse?.text?.['*']||'';
+    if(html&&html.length>200){
+      // Strip wiki nav, edit links, categories — keep just the article body
+      const div=document.createElement('div');
+      div.innerHTML=html;
+      // Remove nav tables, edit spans, category links
+      div.querySelectorAll('.navbox,.mw-editsection,.catlinks,table.navbox,#toc,.toc').forEach(el=>el.remove());
+      const body=div.querySelector('.mw-parser-output');
+      if(body){
+        // Style the extracted content to match our theme
+        const text=body.innerText||body.textContent||'';
+        if(text.trim().length>100){
+          container.innerHTML=`
+            <div class="notice" style="margin-bottom:16px;">Live content pulled from OSRS Wiki — updates automatically when the wiki is edited.</div>
+            <div style="background:var(--surface);border:1px solid var(--border);padding:18px 20px;font-size:15px;line-height:1.7;color:var(--bone);">${body.innerHTML
+              .replace(/<a href="\/w\//g,'<a target="_blank" href="https://oldschool.runescape.wiki/w/')
+              .replace(/style="[^"]*"/g,'')
+              .replace(/<img[^>]*>/g,'')
+              .replace(/<table[^>]*>[\s\S]*?<\/table>/g,'')
+            }</div>`;
+          document.getElementById('pacts-fetching')?.remove();
+          return;
+        }
+      }
+    }
+  }catch(e){console.warn('Pacts fetch error:',e);}
+  // Fallback — show known confirmed pacts
+  if(container) container.innerHTML='';
+  document.getElementById('pacts-fetching')?.remove();
+}
+
+// ── INIT ──
+buildNav();
+renderRegions();
+fetchRelics();
+fetchPacts();
+fetchWiki();
+</script>
+</body>
+</html>
