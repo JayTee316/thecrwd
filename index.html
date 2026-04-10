@@ -90,21 +90,23 @@
     .bio-modal{position:fixed;inset:0;z-index:500;display:flex;opacity:0;pointer-events:none;transition:opacity .35s}
     .bio-modal.open{opacity:1;pointer-events:all}
     .bio-backdrop{position:absolute;inset:0;background:rgba(5,9,14,.8);backdrop-filter:blur(12px)}
-    .bio-panel{position:absolute;z-index:3;right:0;top:0;width:min(560px,55vw);height:100vh;overflow-y:auto;background:rgba(7,12,18,.96);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
-    .bio-modal.open .bio-panel{transform:translateX(0)} .bio-modal{align-items:stretch}
+    .bio-panel{position:relative;z-index:3;margin-left:auto;width:min(560px,55vw);flex-shrink:0;height:100vh;overflow-y:auto;background:rgba(7,12,18,.97);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
+    .bio-modal.open .bio-panel{transform:translateX(0)}
     /* Left floating collage fills space to the left of bio panel */
-    .bio-collage{position:fixed;left:0;top:0;right:min(560px,55vw);height:100vh;z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:2px;padding:2px;opacity:0;transition:opacity .55s .15s}
+    .bio-collage{position:fixed;left:0;top:0;right:min(560px,55vw);bottom:0;z-index:502;pointer-events:none;display:flex;flex-direction:column;gap:2px;padding:2px;opacity:0;transition:opacity .55s .1s}
     .bio-modal.open .bio-collage{opacity:1}
     .bio-collage .ph{overflow:hidden;flex:1;min-height:0;min-width:0;position:relative}
-    .bio-collage .ph img{width:100%;height:100%;object-fit:cover;object-position:center top;opacity:.65;filter:grayscale(10%);display:block;transition:opacity .4s}
+    .bio-collage .ph img{width:100%;height:100%;object-fit:cover;object-position:center 25%;opacity:.65;filter:grayscale(10%);display:block;transition:opacity .4s}
     .bio-collage .ph:hover img{opacity:.85}
-    .bio-collage .row{display:flex;gap:2px;flex:1;min-height:0;overflow:hidden}
-    .bio-collage .row .ph{flex:1;min-width:0;overflow:hidden;min-height:0}
-    .bio-close{position:absolute;top:26px;right:26px;z-index:10;background:none;border:none;color:var(--muted);font-size:18px;cursor:none;font-family:"Space Mono",monospace;transition:color .2s;padding:4px 8px}
+    .bio-collage .row{display:flex;gap:2px;flex:1;min-height:0}
+    .bio-collage .row .ph{flex:1;min-width:0;overflow:hidden;position:relative}
+    .bio-collage .row .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:.65;filter:grayscale(12%);display:block;transition:opacity .4s}
+    .bio-collage .row .ph:hover img{opacity:.85}
+    .bio-close{position:sticky;top:0;float:right;display:block;margin:22px 22px 0 0;z-index:10;background:none;border:none;color:var(--muted);font-size:18px;cursor:none;font-family:"Space Mono",monospace;transition:color .2s;padding:4px 8px}
     .bio-close:hover{color:var(--accent)}
 
     /* PHOTO COLLAGE inside panel */
-    .bio-content{padding:52px 48px}
+    .bio-content{padding:12px 48px 52px}
     .bio-num{font-family:"Space Mono",monospace;font-size:9px;color:var(--muted);letter-spacing:.25em;margin-bottom:20px}
     .bio-name{font-family:"Bebas Neue",sans-serif;font-size:clamp(52px,7vw,72px);letter-spacing:.06em;color:var(--accent);line-height:1;margin-bottom:6px}
     .bio-role{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:32px}
