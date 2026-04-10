@@ -89,23 +89,22 @@
     /* BIO + PHOTO PANEL */
     .bio-modal{position:fixed;inset:0;z-index:500;display:flex;opacity:0;pointer-events:none;transition:opacity .35s}
     .bio-modal.open{opacity:1;pointer-events:all}
-    .bio-backdrop{position:absolute;inset:0;background:rgba(5,9,14,.75);backdrop-filter:blur(10px)}
-    /* Right text panel */
-    .bio-panel{position:relative;z-index:1;margin-left:auto;width:min(560px,55vw);height:100vh;overflow-y:auto;background:rgba(7,12,18,.96);border-left:1px solid var(--border);transform:translateX(40px);transition:transform .4s cubic-bezier(.16,1,.3,1)}
-    .bio-modal.open .bio-panel{transform:translateX(0)}
+    .bio-backdrop{position:absolute;inset:0;background:rgba(5,9,14,.8);backdrop-filter:blur(12px)}
+    .bio-panel{position:absolute;z-index:3;right:0;top:0;width:min(560px,55vw);height:100vh;overflow-y:auto;background:rgba(7,12,18,.96);border-left:1px solid var(--border);transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
+    .bio-modal.open .bio-panel{transform:translateX(0)} .bio-modal{align-items:stretch}
+    /* Left floating collage fills space to the left of bio panel */
+    .bio-collage{position:fixed;left:0;top:0;right:min(560px,55vw);height:100vh;z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:2px;padding:2px;opacity:0;transition:opacity .55s .15s}
+    .bio-modal.open .bio-collage{opacity:1}
+    .bio-collage .ph{overflow:hidden;flex:1;min-height:0;min-width:0;position:relative}
+    .bio-collage .ph img{width:100%;height:100%;object-fit:cover;object-position:center top;opacity:.65;filter:grayscale(10%);display:block;transition:opacity .4s}
+    .bio-collage .ph:hover img{opacity:.85}
+    .bio-collage .row{display:flex;gap:2px;flex:1;min-height:0;overflow:hidden}
+    .bio-collage .row .ph{flex:1;min-width:0;overflow:hidden;min-height:0}
     .bio-close{position:absolute;top:26px;right:26px;z-index:10;background:none;border:none;color:var(--muted);font-size:18px;cursor:none;font-family:"Space Mono",monospace;transition:color .2s;padding:4px 8px}
     .bio-close:hover{color:var(--accent)}
-    .bio-content{padding:52px}
-    /* Left floating collage */
-    .bio-collage{position:fixed;left:0;top:0;width:calc(45vw - min(560px,55vw) + 45vw);max-width:45vw;height:100vh;z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:3px;padding:3px;opacity:0;transition:opacity .5s .2s}
-    .bio-modal.open .bio-collage{opacity:1}
-    .bio-collage .ph{overflow:hidden;flex:1;min-height:0;position:relative}
-    .bio-collage .ph img{width:100%;height:100%;object-fit:cover;object-position:center top;opacity:.55;filter:grayscale(15%);transition:opacity .4s}
-    .bio-collage .ph:hover img{opacity:.75}
-    /* Row arrangements */
-    .bio-collage .row{display:flex;gap:3px;flex:1;min-height:0}
-    .bio-collage .row .ph{flex:1}
-    .bio-collage .row .ph.big{flex:1.6}
+
+    /* PHOTO COLLAGE inside panel */
+    .bio-content{padding:52px 48px}
     .bio-num{font-family:"Space Mono",monospace;font-size:9px;color:var(--muted);letter-spacing:.25em;margin-bottom:20px}
     .bio-name{font-family:"Bebas Neue",sans-serif;font-size:clamp(52px,7vw,72px);letter-spacing:.06em;color:var(--accent);line-height:1;margin-bottom:6px}
     .bio-role{font-family:"Space Mono",monospace;font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:32px}
@@ -356,9 +355,9 @@
 <!-- LOWERCASE BIO MODAL -->
 <div class="bio-modal" id="bio-lowercase">
   <div class="bio-backdrop" onclick="closeBio('lowercase')"></div>
-  <div class="bio-collage" id="lc-collage"></div>
   <div class="bio-panel">
     <button class="bio-close" onclick="closeBio('lowercase')">&#x2715;</button>
+    <div class="bio-photos" id="lc-photos"></div>
     <div class="bio-content">
       <div class="bio-num">01 &mdash; MUSIC &middot; PRODUCTION</div>
       <div class="bio-name">LOWERCASE</div>
@@ -407,9 +406,9 @@
 <!-- SELF BIO MODAL -->
 <div class="bio-modal" id="bio-self">
   <div class="bio-backdrop" onclick="closeBio('self')"></div>
-  <div class="bio-collage" id="self-collage"></div>
   <div class="bio-panel">
     <button class="bio-close" onclick="closeBio('self')">&#x2715;</button>
+    <div class="bio-photos" id="self-photos"></div>
     <div class="bio-content">
       <div class="bio-num">02 &mdash; MUSIC</div>
       <div class="bio-name">SELF</div>
@@ -535,32 +534,20 @@ var slc=document.getElementById("selfLogoCard"); if(slc) slc.src=SL;
 })();
 
 // Build photo collage in bio panels
-function buildCollage(collageId, photos) {
-  var c=document.getElementById(collageId); if(!c||!photos||!photos.length) return;
-  // Build 3 rows of photos as floating collage on left
-  // Row 1: 2 photos, Row 2: 1 wide, Row 3: 2 photos, Row 4: 1 tall (if enough)
-  var rows=[
-    [0,1],
-    [2],
-    [3,4],
-    [5,6],
-    [7,8]
+function buildCollage(containerId, photos, wideIdx) {
+  var c=document.getElementById(containerId); if(!c) return;
+  // layout: wide(span2)+1, then 3, then 3
+  var layout=[
+    {wide:true}, {wide:false},
+    {wide:false},{wide:false},{wide:false},
+    {wide:false},{wide:false},{wide:false}
   ];
-  rows.forEach(function(rowIdxs){
-    var rowDiv=document.createElement("div");
-    rowDiv.className="row";
-    var hasPhoto=false;
-    rowIdxs.forEach(function(i){
-      if(i<photos.length){
-        hasPhoto=true;
-        var ph=document.createElement("div");
-        ph.className="ph"+(rowIdxs.length===1?" big":"");
-        var img=document.createElement("img");
-        img.src=photos[i]; img.alt=""; img.loading="lazy";
-        ph.appendChild(img); rowDiv.appendChild(ph);
-      }
-    });
-    if(hasPhoto) c.appendChild(rowDiv);
+  photos.slice(0,8).forEach(function(src,i){
+    var d=document.createElement("div");
+    d.className="ph"+(layout[i]&&layout[i].wide?" wide":"");
+    var img=document.createElement("img");
+    img.src=src; img.alt=""; img.loading="lazy";
+    d.appendChild(img); c.appendChild(d);
   });
 }
 
