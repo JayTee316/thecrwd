@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WRNG CRWD</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --black: #0a0a0a;
+  --white: #f0ede8;
+  --cream: #d4cfc7;
+  --red: #c42b2b;
+  --red-glow: #ff3333;
+  --gold: #c9a84c;
+  --blue: #3a6b9f;
+  --grey: #1a1a1a;
+  --font-display: 'Anton', sans-serif;
+  --font-serif: 'Fraunces', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--red) var(--black);
+}
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-serif);
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* Custom cursor follower */
+.cursor-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  background: var(--red-glow);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10000;
+  mix-blend-mode: screen;
+  transition: transform 0.1s ease;
+  box-shadow: 0 0 15px var(--red-glow), 0 0 30px rgba(255,51,51,0.3);
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1.5rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, rgba(10,10,10,0.95), transparent);
+  transition: background 0.4s ease;
+}
+
+nav.scrolled {
+  background: rgba(10,10,10,0.97);
+  backdrop-filter: blur(20px);
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.3em;
+  color: var(--white);
+  text-decoration: none;
+  position: relative;
+}
+
+.nav-logo::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--red);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.nav-logo:hover::after { transform: scaleX(1); }
+
+.nav-links {
+  display: flex;
+  gap: 2.5rem;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 4px;
+  transition: color 0.3s ease;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s ease;
+}
+
+.nav-links a:hover { color: var(--white); }
+.nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+/* Mobile menu */
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.menu-toggle span {
+  width: 24px;
+  height: 1.5px;
+  background: var(--white);
+  transition: all 0.3s ease;
+}
+
+/* ============================================
+   HERO SECTION - with Ellesmere station BG
+   ============================================ */
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('images/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.25) saturate(0.6);
+  transform: scale(1.05);
+  transition: transform 8s ease;
+}
+
+.hero:hover .hero-bg {
+  transform: scale(1.1);
+}
+
+/* Glowing sign overlay effect */
+.hero-glow {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 60px;
+  background: radial-gradient(ellipse, rgba(58,107,159,0.4) 0%, transparent 70%);
+  animation: signGlow 3s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes signGlow {
+  0% { opacity: 0.4; filter: blur(20px); }
+  50% { opacity: 0.8; filter: blur(30px); }
+  100% { opacity: 0.5; filter: blur(25px); }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.hero-raccoon {
+  width: 120px;
+  height: auto;
+  margin-bottom: 2rem;
+  filter: invert(0) brightness(10);
+  animation: fadeInUp 1.2s ease forwards;
+  opacity: 0;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 12vw, 10rem);
+  letter-spacing: 0.04em;
+  line-height: 0.95;
+  text-transform: uppercase;
+  animation: fadeInUp 1.2s ease 0.3s forwards;
+  opacity: 0;
+}
+
+.hero-title .outline {
+  -webkit-text-stroke: 1.5px var(--white);
+  color: transparent;
+}
+
+.hero-subtitle {
+  font-family: var(--font-serif);
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.3em;
+  margin-top: 1.5rem;
+  color: var(--cream);
+  animation: fadeInUp 1.2s ease 0.6s forwards;
+  opacity: 0;
+}
+
+.hero-scroll {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0;
+  animation: fadeInUp 1.2s ease 1s forwards;
+}
+
+.hero-scroll::after {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 40px;
+  background: var(--red);
+  margin: 1rem auto 0;
+  animation: scrollLine 2s ease infinite;
+}
+
+@keyframes scrollLine {
+  0% { transform: scaleY(0); transform-origin: top; }
+  50% { transform: scaleY(1); transform-origin: top; }
+  51% { transform: scaleY(1); transform-origin: bottom; }
+  100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================
+   ABOUT / MANIFESTO
+   ============================================ */
+.about {
+  padding: 8rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+  align-items: center;
+}
+
+.about-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 2rem;
+}
+
+.about-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: 0.05em;
+  margin-bottom: 2rem;
+  line-height: 1.1;
+}
+
+.about-text {
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: var(--cream);
+  font-weight: 300;
+}
+
+.about-text p { margin-bottom: 1.5rem; }
+
+.about-image {
+  position: relative;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+}
+
+.about-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(30%);
+  transition: filter 0.6s ease, transform 0.6s ease;
+}
+
+.about-image:hover img {
+  filter: grayscale(0%);
+  transform: scale(1.03);
+}
+
+.about-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(196,43,43,0.3);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ============================================
+   DIVIDER
+   ============================================ */
+.divider {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 3rem;
+}
+
+.divider-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(196,43,43,0.4), transparent);
+}
+
+/* ============================================
+   ARTISTS SECTION
+   ============================================ */
+.artists-section {
+  padding: 8rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 6rem;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: 0.1em;
+}
+
+/* Artist Card */
+.artist-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-bottom: 10rem;
+  align-items: start;
+}
+
+.artist-card:nth-child(even) {
+  direction: rtl;
+}
+
+.artist-card:nth-child(even) > * {
+  direction: ltr;
+}
+
+.artist-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.artist-photo {
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  position: relative;
+}
+
+.artist-photo:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 16/10;
+}
+
+.artist-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s ease, filter 0.5s ease;
+  filter: grayscale(20%);
+}
+
+.artist-photo:hover img {
+  transform: scale(1.05);
+  filter: grayscale(0%);
+}
+
+.artist-info {
+  padding-top: 2rem;
+}
+
+.artist-name {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 6vw, 5rem);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.artist-role {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 2rem;
+}
+
+.artist-bio {
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--cream);
+  font-weight: 300;
+  margin-bottom: 2.5rem;
+}
+
+.artist-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(240,237,232,0.08);
+  border-bottom: 1px solid rgba(240,237,232,0.08);
+}
+
+.stat {
+  text-align: left;
+}
+
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  color: var(--white);
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(212,207,199,0.5);
+  margin-top: 0.3rem;
+}
+
+.artist-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.artist-link {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--white);
+  text-decoration: none;
+  padding: 0.7rem 1.5rem;
+  border: 1px solid rgba(240,237,232,0.2);
+  transition: all 0.3s ease;
+}
+
+.artist-link:hover {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+/* ============================================
+   COMMUNITY SECTION
+   ============================================ */
+.community {
+  padding: 8rem 3rem;
+  background: var(--grey);
+  position: relative;
+}
+
+.community::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--red), transparent);
+}
+
+.community-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.community-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 3rem;
+  margin-top: 4rem;
+}
+
+.community-card {
+  background: rgba(240,237,232,0.03);
+  padding: 3rem;
+  border: 1px solid rgba(240,237,232,0.06);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.community-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
+}
+
+.community-card:hover::before {
+  transform: scaleX(1);
+}
+
+.community-card:hover {
+  background: rgba(240,237,232,0.06);
+  transform: translateY(-4px);
+}
+
+.cc-name {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.cc-role {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 1.5rem;
+}
+
+.cc-desc {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--cream);
+  font-weight: 300;
+}
+
+/* ============================================
+   MONTH'S END SHOWS
+   ============================================ */
+.shows {
+  padding: 8rem 3rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.shows-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-bottom: 5rem;
+}
+
+.shows-text {
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: var(--cream);
+  font-weight: 300;
+}
+
+.venues-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 3rem;
+}
+
+.venue-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(240,237,232,0.15);
+  color: var(--cream);
+  transition: all 0.3s ease;
+}
+
+.venue-tag:hover {
+  border-color: var(--red);
+  color: var(--white);
+}
+
+/* ============================================
+   CONTACT / FOOTER
+   ============================================ */
+.contact {
+  padding: 8rem 3rem 4rem;
+  text-align: center;
+  position: relative;
+}
+
+.contact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(196,43,43,0.4), transparent);
+}
+
+.contact-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  letter-spacing: 0.1em;
+  margin-bottom: 2rem;
+}
+
+.contact-email {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-style: italic;
+  color: var(--cream);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(196,43,43,0.4);
+  padding-bottom: 4px;
+  transition: all 0.3s ease;
+}
+
+.contact-email:hover {
+  color: var(--white);
+  border-color: var(--red);
+}
+
+.contact-socials {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.contact-socials a {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.contact-socials a:hover { color: var(--red-glow); }
+
+footer {
+  padding: 3rem;
+  text-align: center;
+  border-top: 1px solid rgba(240,237,232,0.05);
+}
+
+.footer-logo {
+  width: 60px;
+  margin-bottom: 1rem;
+  filter: brightness(10);
+  opacity: 0.6;
+}
+
+.footer-copy {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(212,207,199,0.3);
+}
+
+/* ============================================
+   SCROLL REVEAL (only active when JS adds .js-ready to <html>)
+   ============================================ */
+.js-ready .reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.js-ready .reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   GRAIN OVERLAY
+   ============================================ */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 968px) {
+  nav { padding: 1rem 1.5rem; }
+  .nav-links { display: none; }
+  .menu-toggle { display: flex; }
+  
+  .nav-links.open {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10,10,10,0.98);
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .nav-links.open a {
+    font-size: 1rem;
+  }
+
+  .about {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    padding: 5rem 1.5rem;
+  }
+
+  .artist-card {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-bottom: 6rem;
+  }
+
+  .artist-card:nth-child(even) { direction: ltr; }
+
+  .artists-section { padding: 5rem 1.5rem; }
+
+  .shows-header {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .shows { padding: 5rem 1.5rem; }
+  .community { padding: 5rem 1.5rem; }
+  .contact { padding: 5rem 1.5rem 3rem; }
+
+  .cursor-dot { display: none; }
+}
+
+@media (max-width: 600px) {
+  .artist-photos {
+    grid-template-columns: 1fr;
+  }
+  
+  .artist-photo:first-child {
+    aspect-ratio: 3/4;
+  }
+
+  .artist-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .community-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Grain overlay -->
+<div class="grain"></div>
+
+<!-- Custom cursor -->
+<div class="cursor-dot" id="cursor"></div>
+
+<!-- Navigation -->
+<nav id="navbar">
+  <a href="#hero" class="nav-logo">WRNG CRWD</a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#about" onclick="closeMenu()">About</a></li>
+    <li><a href="#lowercase-section" onclick="closeMenu()">LOWERCASE</a></li>
+    <li><a href="#self-section" onclick="closeMenu()">SELF</a></li>
+    <li><a href="#community-section" onclick="closeMenu()">Community</a></li>
+    <li><a href="#shows-section" onclick="closeMenu()">Shows</a></li>
+    <li><a href="#contact" onclick="closeMenu()">Contact</a></li>
+  </ul>
+  <div class="menu-toggle" id="menuToggle" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <img src="images/wrngcrwd-logo.jpeg" alt="WRNG CRWD Raccoon" class="hero-raccoon">
+    <h1 class="hero-title">
+      <span class="outline">WRNG</span><br>CRWD
+    </h1>
+    <p class="hero-subtitle">Scarborough &mdash; Toronto &mdash; The World</p>
+  </div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- About -->
+<section class="about" id="about">
+  <div class="reveal">
+    <div class="about-label">The Movement</div>
+    <h2 class="about-title">We Are The<br>Wrong Crowd</h2>
+    <div class="about-text">
+      <p>As misunderstanding sparked a reaction in LOWERCASE, he began to notice the juxtaposition between raccoons and the members of his community. Raccoons are intelligent mammals like us who have been ostracized by a society that had labelled them as rodents. This misconception maximized the survival instinct of raccoons, forcing them to eventually fall into the typecasting they had been placed inside.</p>
+      <p>LOWERCASE created the concept of WRNG CRWD to symbolize and serve as a beacon for those who do not fit into the caricature of how black people are perceived. Blending the two experiences together, LOWERCASE and SELF along with the WRNG CRWD community have been able to showcase themselves as well as other talented black artists in the city through the 'Month's End' shows they have curated.</p>
+      <p>These shows served as a hub where attendees could network and share their talents with other like-minded black artists, photographers, cinematographers, designers, actors and actresses.</p>
+    </div>
+  </div>
+  <div class="about-image reveal">
+    <img src="images/about-lowercase.jpg" alt="WRNG CRWD">
+  </div>
+</section>
+
+<div class="divider"><div class="divider-line"></div></div>
+
+<!-- Artists -->
+<section class="artists-section" id="lowercase-section">
+  <div class="section-header reveal">
+    <div class="section-label">The Artists</div>
+    <h2 class="section-title">MEET THE CRWD</h2>
+  </div>
+
+  <!-- LOWERCASE -->
+  <div class="artist-card reveal">
+    <div class="artist-photos">
+      <div class="artist-photo">
+        <img src="images/lowercase-1.jpg" alt="LOWERCASE blue portrait">
+      </div>
+      <div class="artist-photo">
+        <img src="images/lowercase-2.jpg" alt="LOWERCASE profile">
+      </div>
+      <div class="artist-photo">
+        <img src="images/lowercase-3.jpg" alt="LOWERCASE reaching">
+      </div>
+    </div>
+    <div class="artist-info">
+      <h3 class="artist-name">LOWERCASE</h3>
+      <div class="artist-role">Artist &bull; Producer &bull; Founder</div>
+      <p class="artist-bio">Canadian-American artist and producer LOWERCASE is establishing himself as an important talent and community fixture with no sights of slowing down. Growing up with frequent trips to learn his roots in Memphis and Jamaica, LOWERCASE was shaped to develop and nurture an eclectic ear for different sounds, which led him to explore creating his own distinct style. Hailing from Scarborough, Canada, his early influences stem from Jay-Z, Memphis artists Gangsta Blacc, Three 6 Mafia, 8 Ball & MJG, as well as Jamaican artists Bob Marley and Beres Hammond. From dissecting The Black Album on his mother's iPod nano to developing various projects, LOWERCASE continues to expand and magnetize his audience.</p>
+      <div class="artist-stats">
+        <div class="stat"><div class="stat-number">180K+</div><div class="stat-label">Spotify Streams</div></div>
+        <div class="stat"><div class="stat-number">60K+</div><div class="stat-label">Apple Music</div></div>
+        <div class="stat"><div class="stat-number">10K+</div><div class="stat-label">TikTok Views</div></div>
+        <div class="stat"><div class="stat-number">2.6K+</div><div class="stat-label">Instagram</div></div>
+      </div>
+      <div class="artist-links">
+        <a href="https://open.spotify.com/artist/4MTOXpWiUfcUFD4vn8Uoij" target="_blank" class="artist-link">Spotify</a>
+        <a href="https://www.instagram.com/lowercasewc" target="_blank" class="artist-link">Instagram</a>
+        <a href="#" class="artist-link">Apple Music</a>
+        <a href="#" class="artist-link">YouTube</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SELF -->
+  <div class="artist-card reveal" id="self-section">
+    <div class="artist-photos">
+      <div class="artist-photo">
+        <img src="images/self-1.jpeg" alt="SELF seated">
+      </div>
+      <div class="artist-photo">
+        <img src="images/self-2.jpeg" alt="SELF red portrait">
+      </div>
+      <div class="artist-photo">
+        <img src="images/self-3.jpeg" alt="SELF crouching">
+      </div>
+    </div>
+    <div class="artist-info">
+      <h3 class="artist-name">SELF</h3>
+      <div class="artist-role">Artist &bull; Producer &bull; Wrong Crowd</div>
+      <p class="artist-bio">SELF is an urban artist from Toronto, Canada, and a key member of the collective Wrong Crowd. As a conduit for the emotions and experiences of others, he channels the tribulations of life through his music, blending influences of hip-hop, R&B, jazz, neo-soul, lo-fi, soft rock, and house music. With a versatile mix of styles and cadences, SELF expresses his perspectives through soothing, somber tones, evoking deep emotion through both composition and lyrical selection. With a primary focus on sample-based production, SELF has cultivated a distinctive sound that resonates with listeners and is easily identifiable as his own.</p>
+      <div class="artist-stats">
+        <div class="stat"><div class="stat-number">60K</div><div class="stat-label">Spotify Streams</div></div>
+        <div class="stat"><div class="stat-number">10K</div><div class="stat-label">Apple Music</div></div>
+        <div class="stat"><div class="stat-number">7K</div><div class="stat-label">TikTok</div></div>
+        <div class="stat"><div class="stat-number">1K</div><div class="stat-label">Instagram</div></div>
+      </div>
+      <div class="artist-links">
+        <a href="https://open.spotify.com/artist/3ckJm8xMsXs3ZkkueNY42v" target="_blank" class="artist-link">Spotify</a>
+        <a href="https://www.instagram.com/selftitledwc" target="_blank" class="artist-link">Instagram</a>
+        <a href="https://linktr.ee/SELFwc" target="_blank" class="artist-link">Linktree</a>
+        <a href="#" class="artist-link">Apple Music</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Community -->
+<section class="community" id="community-section">
+  <div class="community-inner">
+    <div class="section-header reveal">
+      <div class="section-label">The Community</div>
+      <h2 class="section-title">WRNG CRWD EXTENDED</h2>
+    </div>
+    <div class="community-grid">
+      <a href="https://www.joshuaobra.com/" target="_blank" class="community-card reveal" style="text-decoration:none;color:inherit;display:block;">
+        <div class="cc-name">JOSHUA OBRA</div>
+        <div class="cc-role">Actor &bull; Writer &bull; Break2Legs</div>
+        <p class="cc-desc">Born and raised in Scarborough, Ontario, Joshua is an actor and writer with a passion for storytelling. His breakthrough role in <em>Scarborough</em> (2021) premiered at TIFF, and he returned to the festival with his lead performance in <em>Express</em> (2024). He's also the co-founder of Break2Legs, a platform giving back to up-and-coming actors through resources and educational programming.</p>
+      </a>
+      <a href="https://www.instagram.com/dlblackwood/" target="_blank" class="community-card reveal" style="text-decoration:none;color:inherit;display:block;">
+        <div class="cc-name">DESHEAN BLACKWOOD</div>
+        <div class="cc-role">Actor &bull; Content Creator</div>
+        <p class="cc-desc">Deshean's work in acting and content creation expands the WRNG CRWD universe beyond music, showcasing the multifaceted talent that defines the collective. A key creative voice within the community.</p>
+      </a>
+      <div class="community-card reveal">
+        <div class="cc-name">BE</div>
+        <div class="cc-role">Vocalist &bull; Collaborator</div>
+        <p class="cc-desc">Featured vocalist and collaborator, Be brings a refreshing and vulnerable perspective to WRNG CRWD's musical projects, most notably on SELF's "Nights" from the ROADS EP.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Shows -->
+<section class="shows" id="shows-section">
+  <div class="shows-header">
+    <div class="reveal">
+      <div class="about-label">Month's End</div>
+      <h2 class="about-title">The Shows</h2>
+    </div>
+    <div class="reveal">
+      <p class="shows-text">The Month's End shows serve as a hub where attendees can network and share their talents with other like-minded artists, photographers, cinematographers, designers, actors and actresses. A space built for community, by community.</p>
+    </div>
+  </div>
+  <div class="venues-list reveal">
+    <span class="venue-tag">Baby G</span>
+    <span class="venue-tag">The Garrison</span>
+    <span class="venue-tag">Drake Hotel</span>
+    <span class="venue-tag">East Room</span>
+    <span class="venue-tag">SOBs NYC</span>
+    <span class="venue-tag">Sofar HQ NYC</span>
+    <span class="venue-tag">Grand Canyon Theatre</span>
+    <span class="venue-tag">TMU Campus</span>
+    <span class="venue-tag">Dundas Square</span>
+    <span class="venue-tag">Raptors x Sprite</span>
+    <span class="venue-tag">Ottawa Living Room Concert</span>
+  </div>
+</section>
+
+<!-- Contact -->
+<section class="contact" id="contact">
+  <div class="reveal">
+    <div class="section-label">Get In Touch</div>
+    <h2 class="contact-title">JOIN THE CRWD</h2>
+    <a href="/cdn-cgi/l/email-protection#cfb7b8bda0a1a8a6a1bebaa6bda6aabcb78fa8a2aea6a3e1aca0a2" class="contact-email"><span class="__cf_email__" data-cfemail="19616e6b76777e7077686c706b707c6a61597e74787075377a7674">[email&#160;protected]</span></a>
+    <div class="contact-socials">
+      <a href="https://instagram.com/selftitledwc" target="_blank">@selftitledwc</a>
+      <a href="https://tiktok.com/@selfwc" target="_blank">TikTok</a>
+      <a href="https://linktr.ee/SELFwc" target="_blank">Linktree</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <img src="images/wrngcrwd-logo.jpeg" alt="WRNG CRWD" class="footer-logo">
+  <p class="footer-copy">&copy; 2025 WRNG CRWD. All Rights Reserved.</p>
+</footer>
+
+<script>
+// Mark JS as ready so reveal animations activate (with no-JS fallback)
+document.documentElement.classList.add('js-ready');
+
+// Custom cursor
+try {
+  const cursor = document.getElementById('cursor');
+  if (cursor) {
+    document.addEventListener('mousemove', (e) => {
+      cursor.style.left = e.clientX - 4 + 'px';
+      cursor.style.top = e.clientY - 4 + 'px';
+    });
+    document.querySelectorAll('a, .venue-tag, .community-card').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform = 'scale(3)';
+        cursor.style.opacity = '0.5';
+      });
+      el.addEventListener('mouseleave', () => {
+        cursor.style.transform = 'scale(1)';
+        cursor.style.opacity = '1';
+      });
+    });
+  }
+} catch(e) { console.warn('cursor', e); }
+
+// Nav scroll behavior
+try {
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 80);
+  });
+} catch(e) { console.warn('nav', e); }
+
+// Mobile menu
+function toggleMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('navLinks').classList.remove('open');
+}
+
+// Scroll reveal — fall back if IntersectionObserver missing or errors
+try {
+  const reveals = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    reveals.forEach(el => observer.observe(el));
+  } else {
+    reveals.forEach(el => el.classList.add('visible'));
+  }
+} catch(e) {
+  console.warn('reveal', e);
+  document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+}
+
+// Parallax on hero
+try {
+  window.addEventListener('scroll', () => {
+    const scroll = window.scrollY;
+    const hero = document.querySelector('.hero-bg');
+    if (hero && scroll < window.innerHeight) {
+      hero.style.transform = `scale(1.05) translateY(${scroll * 0.3}px)`;
+    }
+  });
+} catch(e) { console.warn('parallax', e); }
+
+// Interactive glow follows mouse on hero
+try {
+  const heroSection = document.querySelector('.hero');
+  const heroGlow = document.querySelector('.hero-glow');
+  if (heroSection && heroGlow) {
+    heroSection.addEventListener('mousemove', (e) => {
+      const rect = heroSection.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      heroGlow.style.left = x + 'px';
+      heroGlow.style.top = y + 'px';
+      heroGlow.style.transform = 'translate(-50%, -50%)';
+      heroGlow.style.width = '300px';
+      heroGlow.style.height = '300px';
+      heroGlow.style.background = 'radial-gradient(ellipse, rgba(58,107,159,0.35) 0%, rgba(196,43,43,0.15) 40%, transparent 70%)';
+    });
+  }
+} catch(e) { console.warn('glow', e); }
+</script>
+
+</body>
+</html>
